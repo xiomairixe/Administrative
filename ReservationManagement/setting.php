@@ -11,7 +11,7 @@
   <style>
     body {
       background: #fafbfc;
-      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
+      font-family: 'QuickSand', 'Poppins', Arial;
       color: #22223b;
     }
 
@@ -21,7 +21,7 @@
       left: 0;
       height: 100vh;
       width: 250px;
-      background: #181c2f;
+      background: #181818ff;
       padding: 2rem 1.5rem;
       display: flex;
       flex-direction: column;
@@ -31,7 +31,7 @@
     }
 
     .sidebar .logo {
-      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
+      font-family: 'QuickSand', 'Poppins', Arial;
       font-size: 1.6rem;
       color: #fff;
       margin-bottom: 2rem;
