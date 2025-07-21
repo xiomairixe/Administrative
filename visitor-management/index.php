@@ -11,7 +11,7 @@
   <style>
     body {
       background: #fafbfc;
-      font-family: 'Inter', Arial, sans-serif;
+      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
       color: #22223b;
     }
 
@@ -21,7 +21,7 @@
       left: 0;
       height: 100vh;
       width: 250px;
-      background: #181c2f;
+      background: #181818ff;
       padding: 2rem 1.5rem;
       display: flex;
       flex-direction: column;
@@ -31,7 +31,7 @@
     }
 
     .sidebar .logo {
-      font-family: 'Montserrat', sans-serif;
+      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
       font-size: 1.6rem;
       color: #fff;
       margin-bottom: 2rem;
@@ -42,7 +42,6 @@
 
     .sidebar .logo i {
       font-size: 2rem;
-      color: #8b5cf6;
     }
 
     .sidebar a {
@@ -59,7 +58,7 @@
 
     .sidebar a.active,
     .sidebar a:hover {
-      background: linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%);
+      background: linear-gradient(90deg, #9A66ff 0%, #4311a5 100%);
       color: #fff;
     }
 
@@ -112,7 +111,7 @@
 
     .topbar .profile .bi-envelope {
       font-size: 1.5rem;
-      color: #6d28d9;
+      color: #9a66ff;
       position: relative;
     }
 
@@ -136,7 +135,7 @@
     }
 
     .dashboard-title {
-      font-family: 'Montserrat', sans-serif;
+      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
       font-size: 2rem;
       font-weight: 700;
     }
@@ -161,7 +160,7 @@
     .stats-card .icon {
       font-size: 2rem;
       background: #ede9fe;
-      color: #8b5cf6;
+      color: #9a66ff;
       border-radius: 50%;
       width: 48px;
       height: 48px;

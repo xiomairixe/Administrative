@@ -1,3 +1,31 @@
+<?php
+
+include('connection.php');
+
+if(isset($_POST["submit"])){
+
+$sql = "INSERT INTO users (username, password, email, role, department, status) VALUES ( '".$_POST["username"]."', '".$_POST["password"]."', '".$_POST["email"]."', '".$_POST["role"]."', '".$_POST["department"]."', '".$_POST["status"]."')";
+
+$result = mysqli_query($conn, $sql);
+
+
+	if($result)
+	{
+		echo 'inserted';
+        header("Location: ".$_SERVER['PHP_SELF']."?inserted=1");
+        exit();
+
+	}
+	else 
+	{
+		  echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+	}
+	
+}
+
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -446,30 +474,7 @@
     </div>
 
     <!-- Main Content Column -->
-    <div class="col main-content">
-      <div class="topbar mb-4">
-        <div class="d-flex align-items-center gap-3">
-          <button class="sidebar-toggle d-lg-none" id="sidebarToggle2" aria-label="Toggle sidebar">
-            <i class="bi bi-list"></i>
-          </button>
-          <nav class="nav">
-            <a class="nav-link" href="#">Home</a>
-            <a class="nav-link" href="#">Contact</a>
-          </nav>
-        </div>
-
-        <div class="profile">
-          <div style="position:relative;">
-            <i class="bi bi-bell"></i>
-            <span class="badge">2</span>
-          </div>
-          <img src="#" class="profile-img" alt="profile">
-          <div class="profile-info">
-            <strong>R. Lance</strong><br>
-            <small>Admin</small>
-          </div>
-        </div>
-      </div> 
+    <div class="col-md-10 p-4">
       <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
         <div style="font-family:'Montserrat',sans-serif;font-size:2rem;font-weight:700;color:#22223b;">Access Control</div>
         <div class="row g-3 mb-3">
@@ -484,81 +489,234 @@
               <option>Facility Manager</option>
             </select>
           </div>
-          <div class="col-md-3 text-end">
-            <button class="btn btn-primary"><i class="bi bi-person-plus"></i> Add User</button>
+
+
+<!-- ADD USER MODAL -->
+
+<!-- ADD USER MODAL -->
+<div class="container mt-5">
+  <div class="text-end">
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+      <i class="bi bi-person-plus"></i> Add User
+    </button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action=""> <!-- same page -->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add New User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" required>
           </div>
+
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select class="form-select" name="role" required>
+              <option value="">Select Role</option>
+              <option value="Super Admin">Super Admin</option>
+              <option value="Facility Admin">Facility Admin</option>
+              <option value="HR">HR</option>
+              <option value="Payroll">Payroll</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Department</label>
+            <select class="form-select" name="department" required>
+              <option value="">Select Department</option>
+              <option value="HR">HR</option>
+              <option value="Payroll">Payroll</option>
+              <option value="IT">IT</option>
+              <option value="Logistics">Logistics</option>
+              <option value="Security">Security</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="status" required>
+              <option value="">Select Status</option>
+              <option value="Active">Active</option>
+              <option value="Pending">Pending</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" name="submit" class="btn btn-success">Add User</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ADD USER MODAL -->
+
+
+
         </div>
         <div class="table-responsive">
           <table class="table align-middle">
             <thead>
               <tr>
-                <th>User</th>
+                <th>Username</th>
+                <th>Password</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th>Department</th>
                 <th>Status</th>
-                <th>Last Login</th>
+                <th>Department</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>
-                  <span class="d-inline-flex align-items-center">
-                    <span style="background:#e0e7ff;border-radius:50%;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;">
-                      <i class="bi bi-shield-lock" style="color:#6366f1;font-size:1.3rem;"></i>
-                    </span>
-                    <strong>John Smith</strong>
-                  </span>
-                </td>
-                <td>john.smith@example.com</td>
-                <td><span class="badge rounded-pill" style="background:#f4ebff;color:#8b5cf6;">Super Admin</span></td>
-                <td>Legal</td>
-                <td><span class="text-success"><i class="bi bi-unlock"></i> Active</span></td>
-                <td>Today, 9:42 AM</td>
-                <td>
-                  <a href="#" class="text-primary me-2"><i class="bi bi-pencil-square"></i></a>
-                  <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <span class="d-inline-flex align-items-center">
-                    <span style="background:#d1fae5;border-radius:50%;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;">
-                      <i class="bi bi-person" style="color:#22c55e;font-size:1.3rem;"></i>
-                    </span>
-                    <strong>Sarah Johnson</strong>
-                  </span>
-                </td>
-                <td>sarah.j@example.com</td>
-                <td><span class="badge rounded-pill" style="background:#e0e7ff;color:#2563eb;">Legal Staff</span></td>
-                <td>Legal</td>
-                <td><span class="text-success"><i class="bi bi-unlock"></i> Active</span></td>
-                <td>Yesterday, 4:23 PM</td>
-                <td>
-                  <a href="#" class="text-primary me-2"><i class="bi bi-pencil-square"></i></a>
-                  <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
-                </td>
-              </tr>
+
+  <?php 
+	
+	$sql="select * from users";
+	$result=mysqli_query($conn,$sql);
+	
+	$i=1;
+	while($data=mysqli_fetch_array($result))
+	{?>
+             
               <tr>
                 <td>
                   <span class="d-inline-flex align-items-center">
                     <span style="background:#fef9c3;border-radius:50%;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;">
                       <i class="bi bi-person-badge" style="color:#eab308;font-size:1.3rem;"></i>
                     </span>
-                    <strong>Robert Chen</strong>
+                    <strong><?php echo $data['username'];?></strong>
                   </span>
                 </td>
-                <td>robert.c@example.com</td>
-                <td><span class="badge rounded-pill" style="background:#fef9c3;color:#eab308;">Facility Manager</span></td>
-                <td>Operations</td>
-                <td><span class="text-danger"><i class="bi bi-lock"></i> Locked</span></td>
-                <td>3 days ago</td>
+                <td><?php echo $data['password'];?></td>
+                <td><span class="badge rounded-pill" style="background:#fef9c3;color:#eab308;"><?php echo $data['email'];?></span></td>
+                <td><?php echo $data['role'];?></td>
+                <td><span class="text-danger"><i class="bi bi-lock"></i><?php echo $data['status'];?></span></td>
+                <td><?php echo $data['department'];?></td>
                 <td>
-                  <a href="#" class="text-primary me-2"><i class="bi bi-pencil-square"></i></a>
-                  <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
+
+
+                   <a href="#" 
+                    class="text-primary me-2 editBtn"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#editUserModal"
+                    data-user_id="<?= $data['user_id'] ?>"
+                    data-username="<?= $data['username'] ?>"
+                    data-password="<?= $data['password'] ?>"
+                    data-email="<?= $data['email'] ?>"
+                    data-role="<?= $data['role'] ?>"
+                    data-department="<?= $data['department'] ?>"
+                    data-status="<?= $data['status'] ?>">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+
+
+
+                  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="update.php">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" name="user_id" id="edit_user_id">
+
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" id="edit_username" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="text" name="password" id="edit_password" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" id="edit_email" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select class="form-select" name="role" id="edit_role" required>
+              <option value="Super Admin">Super Admin</option>
+              <option value="Facility Admin">Facility Admin</option>
+              <option value="HR">HR</option>
+              <option value="Payroll">Payroll</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Department</label>
+            <select class="form-select" name="department" id="edit_department" required>
+              <option value="HR">HR</option>
+              <option value="Payroll">Payroll</option>
+              <option value="IT">IT</option>
+              <option value="Logistics">Logistics</option>
+              <option value="Security">Security</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="status" id="edit_status" required>
+              <option value="Active">Active</option>
+              <option value="Pending">Pending</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" name="update" class="btn btn-primary">Update</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+
+                  
+                  <a href="delete.php?user_id=<?= $data['user_id'] ?>" 
+                    class="text-danger" 
+                    onclick="return confirm('Are you sure you want to delete this user?');">
+                    <i class="bi bi-trash"></i>
+                  </a>
+
+                  
                 </td>
               </tr>
+              
+	<?php $i++; } ?>     
             </tbody>
           </table>
         </div>
@@ -579,8 +737,23 @@
         © 2025 Legal Admin
       </footer>
     </div>
-  </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.querySelectorAll('.editBtn').forEach(button => {
+  button.addEventListener('click', function () {
+    document.getElementById('edit_user_id').value = this.dataset.user_id;
+    document.getElementById('edit_username').value = this.dataset.username;
+    document.getElementById('edit_password').value = this.dataset.password;
+    document.getElementById('edit_email').value = this.dataset.email;
+    document.getElementById('edit_role').value = this.dataset.role;
+    document.getElementById('edit_department').value = this.dataset.department;
+    document.getElementById('edit_status').value = this.dataset.status;
+  });
+});
+</script>
 
 <!-- Chart.js Scripts -->
 <script>
