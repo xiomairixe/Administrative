@@ -1,5 +1,5 @@
-    body {
-      font-family: 'Montserrat', 'Inter', Arial, sans-serif;
+body {
+      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
       background: #fafbfc;
       color: #22223b;
       font-size: 16px;
@@ -7,74 +7,79 @@
 
     /* Sidebar */
     .sidebar {
-      background: #181c2f;
+      background: #181818ff;
       color: #fff;
       min-height: 100vh;
       border: none;
+      width: 220px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 1040;
+      transition: left 0.3s;
+      overflow-y: auto;
+      padding: 1rem 0.3rem 1rem 0.3rem;
+      scrollbar-width: none; /* Firefox */
+      height: 100vh;
+      -ms-overflow-style: none;  /* IE/Edge */
     }
-    .sidebar .logo {
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 500;
-      color: #fff;
-      margin-bottom: 2.5rem;
-      letter-spacing: 1px;
+    .sidebar::-webkit-scrollbar {
+      display: none;    
+      width: 0px;
+      background: transparent;
+      display: none; /* Chrome, Safari, Opera */
     }
     .sidebar a, .sidebar button {
       color: #bfc7d1;
       background: none;
-      padding: 0.7rem 1rem;
+      border: none;
+      font-size: 0.95rem;
+      padding: 0.45rem 0.7rem;
       border-radius: 8px;
       display: flex;
       align-items: center;
-      gap: 0.9rem;
+      gap: 0.7rem;
+      margin-bottom: 0.1rem;
       transition: background 0.2s, color 0.2s;
       width: 100%;
       text-align: left;
+      white-space: nowrap;
     }
     .sidebar a.active,
     .sidebar a:hover,
     .sidebar button.active,
     .sidebar button:hover {
-      background: linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%);
+      background: linear-gradient(90deg, #9A66ff 0%, #4311a5 100%);
       color: #fff;
     }
     .sidebar hr {
       border-top: 1px solid #232a43;
-      margin: 1.2rem 0;
+      margin: 0.7rem 0;
+    }
+    .sidebar .nav-link ion-icon {
+      font-size: 1.2rem;
+      margin-right: 0.3rem;
     }
 
     /* Topbar */
     .topbar {
-      background: #fff;
-      border-bottom: 1px solid #f0f0f0;
-      padding: 1.2rem 2rem 1.2rem 2rem;
+      padding: 0.7rem 1.2rem 0.7rem 1.2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
+      margin-top: 0 !important;
     }
     .topbar .nav-link {
       color: #22223b;
       font-weight: 500;
       font-size: 1.08rem;
-      margin-right: 1.5rem;
       background: none;
       border: none;
     }
     .topbar .nav-link.active,
-    .topbar .nav-link:hover {
-      color: #8b5cf6;
+    .topbar .nav-link:hover { 
       text-decoration: underline;
-    }
-    .topbar .search-bar {
-      background: #f4f6fa;
-      border-radius: 1.5rem;
-      padding: 0.3rem 1.2rem;
-      border: none;
-      width: 260px;
-      font-size: 1rem;
-      color: #6c757d;
-      outline: none;
     }
     .topbar .profile {
       display: flex;
@@ -83,14 +88,14 @@
     }
     .topbar .profile .bi-bell {
       font-size: 1.5rem;
-      color: #8b5cf6;
+      color: #9a66ff;
       position: relative;
     }
     .topbar .profile .badge {
       position: absolute;
       top: -8px;
       right: -8px;
-      background: #8b5cf6;
+      background: #9a66ff;
       color: #fff;
       font-size: 0.7rem;
       border-radius: 50%;
@@ -119,15 +124,15 @@
 
     /* Dashboard Title & Breadcrumbs */
     .dashboard-title {
-      font-family: 'Montserrat', sans-serif;
-      font-size: 2.1rem;
+      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
+      font-size: 1.7rem;
       font-weight: 700;
-      margin-bottom: 1.7rem;
+      margin-bottom: 1.2rem;
       color: #22223b;
     }
     .breadcrumbs {
       color: #3b82f6;
-      font-size: 1rem;
+      font-size: 0.98rem;
       text-align: right;
     }
 
@@ -154,7 +159,7 @@
     }
     .stats-card .icon {
       background: #ede9fe;
-      color: #8b5cf6;
+      color: #4311a5;
       border-radius: 50%;
       width: 48px;
       height: 48px;
@@ -197,7 +202,7 @@
       border: 1px solid #f0f0f0;
     }
     .dashboard-col h5 {
-      font-family: 'Montserrat', sans-serif;
+      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
       font-size: 1.13rem;
       font-weight: 600;
       margin-bottom: 1.1rem;
@@ -238,34 +243,25 @@
     }
 
     /* Responsive */
+
     @media (max-width: 1200px) {
       .main-content {
-        padding: 1.2rem 0.7rem 1rem 0.7rem;
-      }
-      .dashboard-row {
-        flex-direction: column;
+        padding: 1rem 0.3rem 1rem 0.3rem;
       }
       .sidebar {
-        width: 100vw;
-        min-height: unset;
-        position: static;
-        padding: 1rem 0.5rem;
+        width: 180px;
+        padding: 1rem 0.3rem;
       }
       .main-content {
-        margin-left: 0;
+        margin-left: 180px;
       }
     }
+
     @media (max-width: 900px) {
       .sidebar {
-        position: fixed;
-        left: -260px;
-        top: 0;
-        z-index: 1050;
-        height: 100vh;
-        width: 220px;
-        padding: 1.2rem 0.7rem 1rem 0.7rem;
-        background: #181c2f;
-        transition: left 0.3s;
+        left: -220px;
+        width: 180px;
+        padding: 1rem 0.3rem;
       }
       .sidebar.show {
         left: 0;
@@ -275,34 +271,28 @@
         padding: 1rem 0.5rem 1rem 0.5rem;
       }
       .sidebar-toggle {
-        display: inline-block;
-      }
-    }
-    @media (max-width: 700px) {
-      .dashboard-title {
-        font-size: 1.3rem;
-      }
-      .main-content {
-        padding: 0.7rem 0.2rem 0.7rem 0.2rem;
-      }
-      .stats-card {
-        min-width: 120px;
-        padding: 1rem 0.7rem;
-      }
-      .dashboard-col {
-        padding: 1rem 0.7rem;
+        display: block;
       }
       .topbar {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
+        padding: 0.7rem 0.5rem;
       }
-      .topbar .search-bar {
-        width: 100%;
-        margin-top: 0.5rem;
+      .topbar .profile {
+        margin-top: 0.7rem;
       }
     }
-    @media (max-width: 500px) {
+    @media (max-width: 700px) {
+      .dashboard-title {
+        font-size: 1.1rem;
+      }
+      .main-content {
+        padding: 0.7rem 0.2rem 0.7rem 0.2rem;
+      }
+      .card-summary h4 {
+        font-size: 1.1rem;
+      }
       .sidebar {
         width: 100vw;
         left: -100vw;
@@ -314,12 +304,70 @@
       .main-content {
         padding: 0.3rem 0.1rem;
       }
-      .dashboard-row,
-      .stats-cards {
-        gap: 0.5rem;
+      .sidebar .logo {
+        font-size: 1rem;
       }
-      .dashboard-col {
-        min-width: 0;
-        padding: 0.7rem 0.3rem;
+      .sidebar a, .sidebar button {
+        font-size: 0.93rem;
+        padding: 0.4rem 0.5rem;
+      }
+      .sidebar .nav-link ion-icon {
+        font-size: 1rem;
+      }
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.7rem 0.2rem;
+      }
+      .topbar .profile {
+        margin-top: 0.5rem;
       }
     }
+    @media (max-width: 500px) {
+      .sidebar {
+        width: 100vw;
+        left: -100vw;
+        padding: 0.3rem 0.01rem;
+      }
+      .sidebar.show {
+        left: 0;
+      }
+      .main-content {
+        padding: 0.1rem 0.01rem;
+      }
+      .card-summary {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.1rem;
+      }
+      .card-summary h4 {
+        font-size: 0.85rem;
+      }
+      .btn, .form-select {
+        width: 100% !important;
+        margin-bottom: 0.5rem;
+      }
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.7rem 0.2rem;
+      }
+      .topbar .profile {
+        margin-top: 0.5rem;
+      }
+    }
+    @media (min-width: 1400px) {
+      .sidebar {
+        width: 260px;
+        padding: 2rem 1rem 2rem 1rem;
+      }
+      .main-content {
+        margin-left: 260px;
+        padding: 2rem 2rem 2rem 2rem;
+      }
+      .topbar {
+        padding: 1.2rem 2rem 1.2rem 2rem;
+      }
+    }
+    

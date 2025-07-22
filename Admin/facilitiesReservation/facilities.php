@@ -1,3 +1,76 @@
+<?php
+include('connection.php');
+
+//Display existing facilities
+$sql = "SELECT * FROM facilities";
+$facilities = $conn->query($sql) or die ($conn->error);
+$row = $facilities->fetch_assoc();
+
+if (isset($_POST['add_facility'])) {
+    $facility_name = $_POST['facility_name'];
+    $type = $_POST['type'];
+    $status = "Available"; // Default status
+    $capacity = intval($_POST['capacity']);
+    $description = $_POST['description'];
+
+    // Handle image upload
+    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+        $image = $_FILES['image']['name'];
+        $target_dir = "uploads/";
+        $target_file = $target_dir . basename($image);
+        move_uploaded_file($_FILES['image']['tmp_name'], $target_file);
+    } else {
+        $image = null; // Handle case where no image is uploaded
+    }
+
+    $sql = "INSERT INTO facilities (facility_name, type, status, capacity, description, image)
+            VALUES ('$facility_name', '$type', '$status', $capacity, '$description', '$image')";
+
+    if (mysqli_query($conn, $sql)) {
+        header("Location: facilities.php?added=1");
+        exit();
+    } else {
+        echo "Error adding facility: " . mysqli_error($conn);
+    }
+}
+
+// if (isset($_POST['update_facility'])) {
+//     $facility_id = intval($_POST['facility_id']);
+//     $facility_name = $_POST['facility_name'];
+//     $facility_type = $_POST['facility_type'];
+//     $status = $_POST['status'];
+//     $capacity = intval($_POST['capacity']);
+//     $description = $_POST['description'];
+
+//     $sql = "UPDATE facilities SET 
+//             facility_name = '$facility_name',
+//             facility_type = '$facility_type',
+//             status = '$status',
+//             capacity = $capacity,
+//             description = '$description'
+//             WHERE facilityID = $facility_id";
+
+//     if (mysqli_query($conn, $sql)) {
+//         header("Location: facilities.php?updated=1");
+//         exit();
+//     } else {
+//         echo "Error updating facility: " . mysqli_error($conn);
+//     }
+// }
+
+// if (isset($_GET['delete_id'])) {
+//     $facility_id = intval($_GET['delete_id']);
+//     $sql = "DELETE FROM facilities WHERE facilityID = $facility_id";
+
+//     if (mysqli_query($conn, $sql)) {
+//         header("Location: facilities.php?deleted=1");
+//         exit();
+//     } else {
+//         echo "Error deleting facility: " . mysqli_error($conn);
+//     }
+// }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -381,6 +454,11 @@
         padding: 1.2rem 2rem 1.2rem 2rem;
       }
     }
+    .facility-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
   </style>
 </head>
 <body>
@@ -494,26 +572,26 @@
               <ion-icon name="add-circle-outline" class="me-1"></ion-icon> Add New Facility
             </button>
         </div>
-
-    <!-- Facilities -->
+<!-- Facilities -->
     <div class="row g-4">
+    <?php do { ?> 
     <div class="col-md-4">
         <div class="facility-card">
-          <img src="#" class="facility-image" alt="image">
+          <img src="/Administrative/ReservationManagement/uploads/<?php echo $row['image'];?>" class="facility-image" alt="<?php echo $row['facility_name']; ?>">
           <div class="p-3">
-            <h5>Room 105</h5>
-            <p class="mb-1">For Meetings</p>
-            <p class="mb-1 type-label">Green Building</p>
-            <p>Status: Active</p>
-            <p class="mb-1">15 Person</p>
+            <h5><?php echo $row['facility_name'];?></h5>
+            <p class="mb-1"><?php echo $row['description'];?></p>
+            <p class="mb-1 type-label"><?php echo $row['location'];?></p>
+            <p>Status: <?php echo $row['status'];?></p>
+            <p class="mb-1"><?php echo $row['capacity'];?></p>
               <div class="d-flex justify-content-between mt-3">
-                <button type="button" class="btn btn-danger btn-sm remove-btn" data-id="<?php echo $row['facilityID']; ?>">
+                <button type="button" class="btn btn-danger btn-sm remove-btn" data-id="<?php echo $row['facility_id']; ?>">
                   <i class="bi bi-trash me-1"></i> Remove Facility
                 </button>
                 <button class="btn btn-primary btn-sm open-manage-btn"
                         data-bs-toggle="modal"
                         data-bs-target="#manageModal"
-                        data-id="<?php echo $row['facilityID']; ?>"
+                        data-id="<?php echo $row['facility_id']; ?>"
                         data-name="<?php echo $row['facility_name']; ?>">
                         Manage
                 </button>
@@ -521,9 +599,88 @@
           </div>
         </div>
       </div>
+          <?php } while ($row = $facilities->fetch_assoc()); ?>
     </div>
-      </main>
-</div>
+  </div>  
+
+<!-- Add Facility Modal -->
+    <div class="modal fade" id="addFacilityModal" tabindex="-1" aria-labelledby="addFacilityModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <form action="facilities.php" method="POST" enctype="multipart/form-data">
+            <div class="modal-header">
+              <h5 class="modal-title" id="addFacilityModalLabel">Add New Facility</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body row g-3">
+              <!-- Name -->
+              <div class="col-md-6">
+                <label for="facility_name" class="form-label">Facility Name</label>
+                <input type="text" class="form-control" id="facility_name" name="facility_name" required>
+              </div>
+
+              <!-- Location -->
+              <div class="col-md-6">
+                <label for="location" class="form-label">Location</label>
+                <input type="text" class="form-control" id="facilityLocation" name="location" required>
+              </div>
+
+              <!-- Capacity -->
+              <div class="col-md-6">
+                <label for="capacity" class="form-label">Capacity</label>
+                <input type="number" class="form-control" id="capacity" name="capacity" required>
+              </div>
+
+              <!-- Type -->
+              <div class="col-md-6">
+                <label for="type" class="form-label">Type</label>
+                <select class="form-select" id="type" name="type" required>
+                  <option value="">Select type</option>
+                  <option>Office Building</option>
+                  <option>Laboratory</option>
+                  <option>Warehouse</option>
+                  <option>Learning Center</option>
+                  <option>Server Facility</option>
+                </select>
+              </div>
+
+              <!-- Description -->
+              <div class="col-12">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+              </div>
+
+              <!-- Slot ---->
+              <div id="slotContainer">
+                  <div class="slot-group mb-2">
+                      <input type="text" name="slot_name[]" class="form-control mb-1" placeholder="Slot Name" required>
+                      <input type="time" name="slot_start[]" class="form-control mb-1" placeholder="Start Time" required>
+                      <input type="time" name="slot_end[]" class="form-control mb-1" placeholder="End Time" required>
+                  </div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm mb-3" onclick="addSlot()">Add Another Slot</button>
+
+
+              <!-- Image Upload -->
+              <div class="col-12">
+                <label for="image" class="form-label">Upload Image</label>
+                <input class="form-control" type="file" id="image" name="image" accept="image/*" required>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="submit" name="add_facility" class="btn btn-primary">Save Facility</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Chart.js Scripts -->
 <script>
