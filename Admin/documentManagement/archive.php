@@ -1,13 +1,19 @@
+<?php
+  require 'connection.php';
+
+  // Fetch only archived documents
+  $sql = "SELECT * FROM document WHERE status = 'archived' ORDER BY upload_date DESC";
+  $archived = $conn->query($sql);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Legal Admin Dashboard</title>
+  <title>Archived Documents</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <style>
     body {
       font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
@@ -446,59 +452,65 @@
 
     <!-- Main Content Column -->
     <main class="col-md-10 main-content">
-<div class="col-md-10 py-4 px-5">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>Archived Documents</h3>
-        <input type="text" id="searchInput" class="form-control w-50" placeholder="Search documents by title...">
-      </div>
-
-      <div id="documentsContainer">
-        <?php
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $title = htmlspecialchars($row['title']);
-                $uploadDate = htmlspecialchars($row['upload_date']);
-                $status = htmlspecialchars($row['status']);
-                echo "
-                <div class='card-doc' data-title='$title'>
-                  <div class='d-flex justify-content-between align-items-start'>
+      <div class="container py-4 px-0">
+        <h3 class="mb-4">Archived Documents</h3>
+        <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search documents by title...">
+        <div class="row g-3" id="documentsContainer">
+          <?php
+          if ($archived && $archived->num_rows > 0) {
+            while ($row = $archived->fetch_assoc()):
+              $filePath = "uploads/" . $row['file_name'];
+              $size = file_exists($filePath) ? round(filesize($filePath) / 1024 / 1024, 2) . " MB" : "N/A";
+          ?>
+            <div class="col-md-4 card-doc" data-title="<?php echo htmlspecialchars($row['title']); ?>">
+              <div class="card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center mb-2">
+                    <span style="background:#e0e7ff;border-radius:8px;padding:6px 10px;margin-right:8px;">
+                      <i class="bi bi-file-earmark-text" style="color:#6366f1;font-size:1.2rem;"></i>
+                    </span>
                     <div>
-                      <h5><ion-icon name='document-text-outline'></ion-icon> $title</h5>
-                      <p class='mb-1 text-muted'>Uploaded: $uploadDate</p>
-                      <span class='badge bg-secondary badge-status'>$status</span>
-                    </div>
-                    <div class='card-actions'>
-                      <button class='btn btn-sm btn-outline-primary action-btn' data-id='{$row['document_id']}' data-action='view' title='View'><ion-icon name='eye-outline'></ion-icon></button>
-                      <button class='btn btn-sm btn-outline-warning action-btn' data-id='{$row['document_id']}' data-action='unarchive' title='Unarchive'><ion-icon name='arrow-up-outline'></ion-icon></button>
-                      <button class='btn btn-sm btn-outline-danger action-btn' data-id='{$row['document_id']}' data-action='trash' title='Trash'><ion-icon name='trash-outline'></ion-icon></button>
+                      <strong class="text-dark"><?php echo htmlspecialchars($row['title']); ?></strong>
+                      <div style="font-size:0.95rem;color:#6c757d;"><?php echo htmlspecialchars($row['folder_id']); ?></div>
                     </div>
                   </div>
-                </div>";
-            }
-        } else {
+                  <div class="mb-2"><small>Size:</small> <?php echo $size; ?></div>
+                  <div class="mb-2"><small>Modified:</small> <?php echo date("M d, Y", strtotime($row['upload_date'])); ?></div>
+                  <div class="mb-2"><small>By:</small> <?php echo htmlspecialchars($row['description']); ?></div>
+                </div>
+                <div class="card-footer d-flex justify-content-end gap-2">
+                  <a href="uploads/<?php echo urlencode($row['file_name']); ?>" class="btn btn-sm btn-outline-secondary" download title="Download"><i class="bi bi-download"></i></a>
+                  <form method="POST" action="action/unarchive.php" style="display:inline;">
+                    <input type="hidden" name="id" value="<?php echo $row['document_id']; ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-success" title="Unarchive"><i class="bi bi-arrow-up-circle"></i></button>
+                  </form>
+                  <form method="POST" action="action/trash.php" style="display:inline;">
+                    <input type="hidden" name="id" value="<?php echo $row['document_id']; ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Move to Trash"><i class="bi bi-trash"></i></button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          <?php
+            endwhile;
+          } else {
             echo "<p class='text-muted text-center'>No archived documents found.</p>";
-        }
-        ?>
+          }
+          ?>
+        </div>
       </div>
-    </div>
     </main>
   </div>
 </div>
 
-<!-- Chart.js Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Sidebar toggle for mobile
-  const sidebarToggle = document.getElementById('sidebarToggle2');
-  const sidebarNav = document.querySelector('.sidebar');
-  sidebarToggle?.addEventListener('click', function () {
-    sidebarNav.classList.toggle('show');
-  });
-  document.addEventListener('click', function (e) {
-    if (window.innerWidth <= 900 && sidebarNav.classList.contains('show')) {
-      if (!sidebarNav.contains(e.target) && !sidebarToggle.contains(e.target)) {
-        sidebarNav.classList.remove('show');
-      }
-    }
+  // Simple search for archived documents
+  document.getElementById('searchInput').addEventListener('input', function() {
+    const val = this.value.toLowerCase();
+    document.querySelectorAll('.card-doc').forEach(function(card) {
+      card.style.display = card.textContent.toLowerCase().includes(val) ? '' : 'none';
+    });
   });
 </script>
 </body>

@@ -1,3 +1,7 @@
+<?php
+  require 'connection.php';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +12,7 @@
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <style>
     body {
       font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
@@ -445,10 +450,10 @@
     </div>
 
     <!-- Main Content Column -->
-    <main class="col-md-10 main-content">
-      <div class="container py-4 px-0">
+    <main class="main-content" style="margin-left:220px; width:calc(100% - 220px); min-height:100vh;">
+      <div class="container-fluid py-4 px-4">
         <div class="mb-4">
-          <input type="text" class="form-control form-control-lg" placeholder="Search..." style="max-width:500px;">
+          <input type="text" class="form-control form-control-lg" placeholder="Search..." style="max-width:500px;" id="searchInput">
         </div>
         <div class="mb-4">
           <div style="font-family:'Montserrat',sans-serif;font-size:2rem;font-weight:700;color:#22223b;">Document Management</div>
@@ -460,30 +465,27 @@
             <div class="bg-white rounded-3 shadow-sm p-3 mb-3">
               <div style="font-weight:600;font-size:1.15rem;margin-bottom:1rem;">Folders</div>
               <ul class="list-group" id="folderList">
+              <?php
+              $folders = [];
+              $folderCounts = [];
+              $res = $conn->query("SELECT folder_id, COUNT(*) as cnt FROM document GROUP BY folder_id");
+              $totalCount = 0;
+              while ($f = $res->fetch_assoc()) {
+                $folders[] = $f['folder_id'];
+                $folderCounts[$f['folder_id']] = $f['cnt'];
+                $totalCount += $f['cnt'];
+              }
+              ?>
                 <li class="list-group-item folder-item active" data-folder="all">
                   <i class="bi bi-folder2-open me-2"></i> All Folders
-                  <span class="badge bg-light text-dark ms-auto">24</span>
+                  <span class="badge bg-light text-dark ms-auto"><?php echo $totalCount; ?></span>
                 </li>
-                <li class="list-group-item folder-item" data-folder="contracts">
-                  <i class="bi bi-folder me-2"></i> Contracts
-                  <span class="badge bg-light text-dark ms-auto">24</span>
-                </li>
-                <li class="list-group-item folder-item" data-folder="hr">
-                  <i class="bi bi-folder me-2"></i> HR Documents
-                  <span class="badge bg-light text-dark ms-auto">18</span>
-                </li>
-                <li class="list-group-item folder-item" data-folder="legal">
-                  <i class="bi bi-folder me-2"></i> Legal
-                  <span class="badge bg-light text-dark ms-auto">12</span>
-                </li>
-                <li class="list-group-item folder-item" data-folder="finance">
-                  <i class="bi bi-folder me-2"></i> Finance
-                  <span class="badge bg-light text-dark ms-auto">31</span>
-                </li>
-                <li class="list-group-item folder-item" data-folder="projects">
-                  <i class="bi bi-folder me-2"></i> Projects
-                  <span class="badge bg-light text-dark ms-auto">15</span>
-                </li>
+                <?php foreach ($folders as $folder): ?>
+                                <li class="list-group-item folder-item" data-folder="<?php echo htmlspecialchars($folder); ?>">
+                                  <i class="bi bi-folder me-2"></i> <?php echo htmlspecialchars(ucwords($folder)); ?>
+                                  <span class="badge bg-light text-dark ms-auto"><?php echo $folderCounts[$folder]; ?></span>
+                                </li>
+                <?php endforeach; ?>
               </ul>
             </div>
           </div>
@@ -491,157 +493,108 @@
           <div class="col-md-9">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <div>
-                <button class="btn btn-light me-2 active" id="tabAll">All Documents</button>
-                <button class="btn btn-light me-2" id="tabActive">Active</button>
-                <button class="btn btn-light" id="tabArchived">Archived</button>
-              </div>
+                <button class="btn btn-light me-2 active" id="tabGrid">Grid</button>
+                <button class="btn btn-light me-2" id="tabList">List</button>
+              </div> 
               <div class="d-flex align-items-center gap-2">
-                <input type="text" class="form-control" placeholder="Search documents" style="max-width:220px;">
+                <input type="text" class="form-control" placeholder="Search documents" style="max-width:220px;" id="tableSearchInput">
                 <button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i></button>
-                <button class="btn btn-primary"><i class="bi bi-plus-lg"></i> Upload Document</button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                  <i class="bi bi-plus-lg"></i>Upload Document
+                </button>
               </div>
             </div>
             <div class="bg-white rounded-3 shadow-sm p-3">
-              <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>Document</th>
-                      <th>Size</th>
-                      <th>Modified</th>
-                      <th>By</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody id="documentTable">
-                    <tr data-folder="hr">
-                      <td>
-                        <span class="d-inline-flex align-items-center">
-                          <span style="background:#fee2e2;border-radius:8px;padding:6px 10px;margin-right:8px;">
-                            <i class="bi bi-file-earmark-pdf" style="color:#ef4444;font-size:1.2rem;"></i>
-                          </span>
-                          <div>
-                            <strong class="text-dark">Employer Handbook 2023.pdf</strong>
-                            <div style="font-size:0.95rem;color:#6c757d;">HR Documents</div>
-                          </div>
+              <div id="gridView" class="row g-3">
+                <?php
+                $result = $conn->query("SELECT * FROM document WHERE status != 'archived' ORDER BY upload_date DESC");
+                $result = $conn->query("SELECT * FROM document WHERE status != 'trash' ORDER BY upload_date DESC");
+                while ($row = $result->fetch_assoc()):
+                  $filePath = "uploads/" . $row['file_name'];
+                  $size = file_exists($filePath) ? round(filesize($filePath) / 1024 / 1024, 2) . " MB" : "N/A";
+                ?>
+                <div class="col-md-4 doc-card" data-folder="<?php echo htmlspecialchars($row['folder_id']); ?>" data-status="<?php echo htmlspecialchars($row['status'] ?? 'active'); ?>">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <div class="d-flex align-items-center mb-2">
+                        <span style="background:#e0e7ff;border-radius:8px;padding:6px 10px;margin-right:8px;">
+                          <i class="bi bi-file-earmark-text" style="color:#6366f1;font-size:1.2rem;"></i>
                         </span>
-                      </td>
-                      <td>3.2 MB</td>
-                      <td>Jun 2, 2023</td>
-                      <td>Sarah Johnson</td>
-                      <td>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-download"></i></a>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-upload"></i></a>
-                        <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
-                      </td>
-                    </tr>
-                    <tr data-folder="contracts">
-                      <td>
-                        <span class="d-inline-flex align-items-center">
-                          <span style="background:#e0e7ff;border-radius:8px;padding:6px 10px;margin-right:8px;">
-                            <i class="bi bi-file-earmark-word" style="color:#6366f1;font-size:1.2rem;"></i>
-                          </span>
-                          <div>
-                            <strong class="text-dark">Vendor Agreement - XYZ Corp.docx</strong>
-                            <div style="font-size:0.95rem;color:#6c757d;">Contracts</div>
-                          </div>
-                        </span>
-                      </td>
-                      <td>1.8 MB</td>
-                      <td>Jun 5, 2023</td>
-                      <td>Michael Brown</td>
-                      <td>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-download"></i></a>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-upload"></i></a>
-                        <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
-                      </td>
-                    </tr>
-                    <tr data-folder="finance">
-                      <td>
-                        <span class="d-inline-flex align-items-center">
-                          <span style="background:#d1fae5;border-radius:8px;padding:6px 10px;margin-right:8px;">
-                            <i class="bi bi-file-earmark-excel" style="color:#22c55e;font-size:1.2rem;"></i>
-                          </span>
-                          <div>
-                            <strong class="text-dark">Q2 Financial Report.xlsx</strong>
-                            <div style="font-size:0.95rem;color:#6c757d;">Finance</div>
-                          </div>
-                        </span>
-                      </td>
-                      <td>4.5 MB</td>
-                      <td>May 28, 2023</td>
-                      <td>David Wang</td>
-                      <td>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-download"></i></a>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-upload"></i></a>
-                        <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
-                      </td>
-                    </tr>
-                    <tr data-folder="legal">
-                      <td>
-                        <span class="d-inline-flex align-items-center">
-                          <span style="background:#e0e7ff;border-radius:8px;padding:6px 10px;margin-right:8px;">
-                            <i class="bi bi-file-earmark-text" style="color:#6366f1;font-size:1.2rem;"></i>
-                          </span>
-                          <div>
-                            <strong class="text-dark">Privacy Policy Update.docx</strong>
-                            <div style="font-size:0.95rem;color:#6c757d;">Legal</div>
-                          </div>
-                        </span>
-                      </td>
-                      <td>0.9 MB</td>
-                      <td>Jun 1, 2023</td>
-                      <td>Jennifer Lee</td>
-                      <td>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-download"></i></a>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-upload"></i></a>
-                        <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
-                      </td>
-                    </tr>
-                    <tr data-folder="projects">
-                      <td>
-                        <span class="d-inline-flex align-items-center">
-                          <span style="background:#fef9c3;border-radius:8px;padding:6px 10px;margin-right:8px;">
-                            <i class="bi bi-file-earmark-ppt" style="color:#eab308;font-size:1.2rem;"></i>
-                          </span>
-                          <div>
-                            <strong class="text-dark">Project Alpha Proposal.pptx</strong>
-                            <div style="font-size:0.95rem;color:#6c757d;">Projects</div>
-                          </div>
-                        </span>
-                      </td>
-                      <td>6.2 MB</td>
-                      <td>May 20, 2023</td>
-                      <td>Robert Wilson</td>
-                      <td>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-download"></i></a>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-upload"></i></a>
-                        <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
-                      </td>
-                    </tr>
-                    <tr data-folder="legal">
-                      <td>
-                        <span class="d-inline-flex align-items-center">
-                          <span style="background:#e0e7ff;border-radius:8px;padding:6px 10px;margin-right:8px;">
-                            <i class="bi bi-file-earmark-text" style="color:#6366f1;font-size:1.2rem;"></i>
-                          </span>
-                          <div>
-                            <strong class="text-dark">NDA Template.docx</strong>
-                            <div style="font-size:0.95rem;color:#6c757d;">Legal</div>
-                          </div>
-                        </span>
-                      </td>
-                      <td>0.5 MB</td>
-                      <td>Apr 15, 2023</td>
-                      <td>Sarah Johnson</td>
-                      <td>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-download"></i></a>
-                        <a href="#" class="text-secondary me-2"><i class="bi bi-upload"></i></a>
-                        <a href="#" class="text-danger"><i class="bi bi-trash"></i></a>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                        <div>
+                          <strong class="text-dark"><?php echo htmlspecialchars($row['title']); ?></strong>
+                          <div style="font-size:0.95rem;color:#6c757d;"><?php echo htmlspecialchars($row['folder_id']); ?></div>
+                        </div>
+                      </div>
+                      <div class="mb-2"><small>Size:</small> <?php echo $size; ?></div>
+                      <div class="mb-2"><small>Modified:</small> <?php echo date("M d, Y", strtotime($row['upload_date'])); ?></div>
+                      <div class="mb-2"><small>By:</small> <?php echo htmlspecialchars($row['description']); ?></div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                      <a href="uploads/<?php echo urlencode($row['file_name']); ?>" class="btn btn-sm btn-outline-secondary" download title="Download"><i class="bi bi-download"></i></a>
+                      <form method="POST" action="action/archive.php" style="display:inline;">
+                        <input type="hidden" name="id" value="<?php echo $row['document_id']; ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Archive"><i class="bi bi-archive"></i></button>
+                      </form>
+                      <form method="POST" action="action/trash.php" style="display:inline;">
+                        <input type="hidden" name="id" value="<?php echo $row['document_id']; ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Trash"><i class="bi bi-trash"></i></button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <?php endwhile; ?>
+              </div>
+              <div id="listView" style="display:none;">
+                <div class="table-responsive">
+                  <table class="table align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Document</th>
+                        <th>Size</th>
+                        <th>Modified</th>
+                        <th>By</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="documentTable">
+                      <?php
+                      $result = $conn->query("SELECT * FROM document WHERE status != 'archived' ORDER BY upload_date DESC");
+                      while ($row = $result->fetch_assoc()):
+                        $filePath = "uploads/" . $row['file_name'];
+                        $size = file_exists($filePath) ? round(filesize($filePath) / 1024 / 1024, 2) . " MB" : "N/A";
+                      ?>
+                        <tr data-folder="<?php echo htmlspecialchars($row['folder_id']); ?>" data-status="<?php echo htmlspecialchars($row['status'] ?? 'active'); ?>">
+                          <td>
+                            <span class="d-inline-flex align-items-center">
+                              <span style="background:#e0e7ff;border-radius:8px;padding:6px 10px;margin-right:8px;">
+                                <i class="bi bi-file-earmark-text" style="color:#6366f1;font-size:1.2rem;"></i>
+                              </span>
+                              <div>
+                                <strong class="text-dark"><?php echo htmlspecialchars($row['title']); ?></strong>
+                                <div style="font-size:0.95rem;color:#6c757d;"><?php echo htmlspecialchars($row['folder_id']); ?></div>
+                              </div>
+                            </span>
+                          </td>
+                          <td><?php echo $size; ?></td>
+                          <td><?php echo date("M d, Y", strtotime($row['upload_date'])); ?></td>
+                          <td><?php echo htmlspecialchars($row['description']); ?></td>
+                          <td>
+                            <a href="uploads/<?php echo urlencode($row['file_name']); ?>" class="btn btn-sm btn-outline-secondary" download title="Download"><i class="bi bi-download"></i></a>
+                            <form method="POST" action="action/archive.php" style="display:inline;">
+                              <input type="hidden" name="id" value="<?php echo $row['document_id']; ?>">
+                              <button type="submit" class="btn btn-sm btn-outline-warning" title="Archive"><i class="bi bi-archive"></i></button>
+                            </form>
+                            <form method="POST" action="action/trash.php" style="display:inline;">
+                              <input type="hidden" name="id" value="<?php echo $row['document_id']; ?>">
+                              <button type="submit" class="btn btn-sm btn-outline-danger" title="
+                              "><i class="bi bi-trash"></i></button>
+                            </form>
+                          </td>
+                        </tr>
+                      <?php endwhile; ?>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -650,6 +603,46 @@
     </main>
   </div>
 </div>
+
+<!-- Upload Document Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" action="action/upload.php" method="POST" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title" id="uploadModalLabel">Upload New Document</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="title" class="form-label">Document Title</label>
+          <input type="text" class="form-control" name="title" id="title" required>
+        </div>
+        <div class="mb-3">
+          <label for="description" class="form-label">Description</label>
+          <input type="text" class="form-control" name="description" id="description">
+        </div>
+        <div class="mb-3">
+          <label for="folder" class="form-label">Folder</label>
+          <select class="form-select" name="folder" id="folder">
+            <?php foreach ($folders as $folder): ?>
+              <option value="<?php echo htmlspecialchars($folder); ?>"><?php echo htmlspecialchars(ucwords($folder)); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <input type="text" class="form-control mt-2" name="new_folder" placeholder="Or create new folder">
+        </div>
+        <div class="mb-3">
+          <label for="document" class="form-label">File</label>
+          <input type="file" class="form-control" name="document" id="document" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Chart.js Scripts -->
 <script>
@@ -667,39 +660,51 @@
     }
   });
 
-   // Folder filter functionality
-        document.querySelectorAll('.folder-item').forEach(function(item) {
-          item.addEventListener('click', function() {
-            document.querySelectorAll('.folder-item').forEach(function(i) {
-              i.classList.remove('active');
-            });
-            item.classList.add('active');
-            const folder = item.getAttribute('data-folder');
-            document.querySelectorAll('#documentTable tr').forEach(function(row) {
-              if (folder === 'all' || row.getAttribute('data-folder') === folder) {
-                row.style.display = '';
-              } else {
-                row.style.display = 'none';
-              }
-            });
-          });
-        });
-        // Tabs functionality (demo only, does not filter actual data)
-        document.getElementById('tabAll').addEventListener('click', function() {
-          this.classList.add('active');
-          document.getElementById('tabActive').classList.remove('active');
-          document.getElementById('tabArchived').classList.remove('active');
-        });
-        document.getElementById('tabActive').addEventListener('click', function() {
-          this.classList.add('active');
-          document.getElementById('tabAll').classList.remove('active');
-          document.getElementById('tabArchived').classList.remove('active');
-        });
-        document.getElementById('tabArchived').addEventListener('click', function() {
-          this.classList.add('active');
-          document.getElementById('tabAll').classList.remove('active');
-          document.getElementById('tabActive').classList.remove('active');
-        });
+  // Folder filter functionality
+  document.querySelectorAll('.folder-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('.folder-item').forEach(function(i) {
+        i.classList.remove('active');
+      });
+      item.classList.add('active');
+      const folder = item.getAttribute('data-folder');
+      document.querySelectorAll('#documentTable tr').forEach(function(row) {
+        if (folder === 'all' || row.getAttribute('data-folder') === folder) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Grid/List toggle
+  document.getElementById('tabGrid').addEventListener('click', function() {
+    document.getElementById('gridView').style.display = '';
+    document.getElementById('listView').style.display = 'none';
+    this.classList.add('active');
+    document.getElementById('tabList').classList.remove('active');
+  });
+  document.getElementById('tabList').addEventListener('click', function() {
+    document.getElementById('gridView').style.display = 'none';
+    document.getElementById('listView').style.display = '';
+    this.classList.add('active');
+    document.getElementById('tabGrid').classList.remove('active');
+  });
+
+  // Search functionality (works for both grid and list)
+  function searchDocs(val) {
+    val = val.toLowerCase();
+    document.querySelectorAll('.doc-card, #documentTable tr').forEach(function(row) {
+      row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
+    });
+  }
+  document.getElementById('searchInput').addEventListener('input', function() {
+    searchDocs(this.value);
+  });
+  document.getElementById('tableSearchInput').addEventListener('input', function() {
+    searchDocs(this.value);
+  });
 </script>
 </body>
 </html>
