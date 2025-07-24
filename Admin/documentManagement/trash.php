@@ -1,3 +1,6 @@
+<?php
+require 'connection.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -445,56 +448,43 @@
     </div>
 
     <!-- Main Content Column -->
-    <main class="col-md-10 main-content">
-    <div class="container mt-4">
+    <main class="main-content" style="margin-left:220px; width:calc(100% - 220px); min-height:100vh;">
+      <div class="container mt-4">
         <h2 class="mb-4">Trash Bin</h2>
         <div class="card shadow-sm">
           <div class="card-body">
             <table class="table table-bordered align-middle">
               <thead class="table-secondary">
                 <tr>
-                  <th></th>
                   <th>Document Title</th>
                   <th>File Name</th>
-                  <th>Deleted By</th>
                   <th>Deleted Date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
               <?php
-              $query = "SELECT t.trash_id, t.trash_at, d.title, d.file_name, u.last_name AS deleted_by
-                        FROM trash t
-                        JOIN document d ON t.document_id = d.document_id
-                        LEFT JOIN users u ON t.deleted_by = u.id";
-              $result = mysqli_query($con, $query);
-              while ($row = mysqli_fetch_assoc($result)) {
+              $result = $conn->query("SELECT * FROM document WHERE status = 'trash' ORDER BY upload_date DESC");
+              while ($row = $result->fetch_assoc()):
               ?>
                 <tr>
-                  <td><input type="checkbox" class="form-check-input"></td>
-                  <td><img src='https://cdn-icons-png.flaticon.com/512/337/337946.png' class='document-icon'> <?= htmlspecialchars($row['title']) ?></td>
+                  <td><?= htmlspecialchars($row['title']) ?></td>
                   <td><?= htmlspecialchars($row['file_name']) ?></td>
-                  <td><?= htmlspecialchars($row['deleted_by']) ?></td>
-                  <td><?= date("M d, Y", strtotime($row['trash_at'])) ?></td>
+                  <td><?= date("M d, Y", strtotime($row['upload_date'])) ?></td>
                   <td>
-                    <form method="post" style="display:inline;">
-                      <input type="hidden" name="trash_id" value="<?= $row['trash_id'] ?>">
-                      <button type="submit" name="restore" class="btn btn-sm btn-outline-success" title="Restore">
+                    <form method="post" action="action/restore.php" style="display:inline;">
+                      <input type="hidden" name="id" value="<?= $row['document_id'] ?>">
+                      <button type="submit" class="btn btn-sm btn-outline-success" title="Restore">
                         <ion-icon name="refresh-outline"></ion-icon>
                       </button>
                     </form>
-                    <form method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to permanently delete this document?');">
-                      <input type="hidden" name="trash_id" value="<?= $row['trash_id'] ?>">
-                      <button type="submit" name="delete" class="btn btn-sm btn-outline-danger" title="Delete">
-                        <ion-icon name="trash-outline"></ion-icon>
-                      </button>
-                    </form>
+                    <!-- Optionally add permanent delete here -->
                   </td>
                 </tr>
-              <?php } ?>
-              <?php if (mysqli_num_rows($result) == 0): ?>
+              <?php endwhile; ?>
+              <?php if ($result->num_rows == 0): ?>
                 <tr>
-                  <td colspan="6" class="text-center text-muted">No trashed documents found.</td>
+                  <td colspan="4" class="text-center text-muted">No trashed documents found.</td>
                 </tr>
               <?php endif; ?>
               </tbody>
