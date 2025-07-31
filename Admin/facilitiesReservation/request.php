@@ -1,3 +1,15 @@
+<?php
+ include ('connection.php');
+  $sql = "SELECT * FROM reservation_requests";
+  $facility = $conn->query($sql) or die ($conn->error);
+  $row = $facility->fetch_assoc();
+
+  $request = $conn->query("SELECT * FROM reservation_requests ORDER BY request_id DESC");
+  $pending = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Pending' ORDER BY request_id DESC");
+  $approved = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Approved' ORDER BY request_id DESC");
+  $rejected = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Rejected' ORDER BY request_id DESC");
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -470,16 +482,16 @@
       <div class="content-body">
           <!-- Actions -->
           <div class="mb-3 text-end">
-            <button class="btn btn-outline-secondary me-2">Batch Reservation</button>
+            <button class="btn btn-outline-secondary me-2">Ba tch Reservation</button>
             <button class="btn btn-primary">New Reservation</button>
           </div>
 
           <!-- Tabs -->
           <ul class="nav nav-tabs mb-3" id="reservationTabs" role="tablist">
-            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#all-tab">All Reservations</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pending-tab">Pending</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#approved-tab">Approved</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#rejected-tab">Rejected</a></li>
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#all-tab" role="tab">All Reservations</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pending-tab" role="tab">Pending</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#approved-tab" role="tab">Approved</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#rejected-tab" role="tab">Rejected</a></li>
           </ul>
 
           <!-- Filters -->
@@ -498,8 +510,8 @@
           <!-- Tab Content -->
           <div class="tab-content">
           <!-- All Tab -->
-            <div class="tab-pane fade show active" id="all-tab">
-              <?php while ($row = $all->fetch_assoc()): ?>
+            <div class="tab-pane fade show active" id="all-tab" role="tabpanel">
+              <?php while ($row = $request->fetch_assoc()): ?>
                 <?php
                   $status = $row['status'];
                   $badgeClass = 'bg-secondary';
@@ -524,22 +536,22 @@
                     </div>
                   </div>
                   <div class="mt-2">
-                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['id']; ?>">
+                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['request_id']; ?>">
                       View Details
                     </button>
                     
                     <?php if ($status === 'Pending') : ?>
-                      <a href="update_status.php?id=<?php echo $row['id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
-                      <a href="update_status.php?id=<?php echo $row['id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
-                    <?php endif; ?>
+                      <a href="action/update_status.php?request_id=<?php echo $row['request_id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
+                      <a href="action/update_status.php?request_id=<?php echo $row['request_id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
+                      <?php endif; ?>
                   </div>
                 </div>
                 <!-- Modal -->
-                    <div class="modal fade" id="viewDetailsModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="viewDetailsLabel<?php echo $row['id']; ?>" aria-hidden="true">
+                    <div class="modal fade" id="viewDetailsModal<?php echo $row['request_id']; ?>" tabindex="-1" aria-labelledby="viewDetailsLabel<?php echo $row['id']; ?>" aria-hidden="true">
                       <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title" id="viewDetailsLabel<?php echo $row['id']; ?>">Reservation Details</h5>
+                            <h5 class="modal-title" id="viewDetailsLabel<?php echo $row['request_id']; ?>">Reservation Details</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
                           <div class="modal-body">
@@ -569,7 +581,7 @@
               <?php endwhile; ?>
             </div>
             <!-- Pending Tab -->
-            <div class="tab-pane fade" id="pending-tab">
+            <div class="tab-pane fade" id="pending-tab" role="tabpanel">
               <?php while ($row = $pending->fetch_assoc()): ?>
                 <div class="reservation-card">
                   <div class="d-flex justify-content-between">
@@ -584,20 +596,21 @@
                     </div>
                   </div>
                   <div class="mt-2">
-                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['id']; ?>">
+                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['reservation_id']; ?>">
                       View Details
                     </button>
                     
-                    <a href="update_status.php?id=<?php echo $row['id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
-                    <a href="update_status.php?id=<?php echo $row['id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
+                    <a href="action/update_status.php?request_id=<?php echo $row['request_id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
+                    <a href="action/update_status.php?request_id=<?php echo $row['request_id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
                   </div>
                 </div>
+
                 <!-- Modal -->
-                    <div class="modal fade" id="viewDetailsModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="viewDetailsLabel<?php echo $row['id']; ?>" aria-hidden="true">
+                    <div class="modal fade" id="viewDetailsModal<?php echo $row['request_id']; ?>" tabindex="-1" aria-labelledby="viewDetailsLabel<?php echo $row['request_id']; ?>" aria-hidden="true">
                       <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title" id="viewDetailsLabel<?php echo $row['id']; ?>">Reservation Details</h5>
+                            <h5 class="modal-title" id="viewDetailsLabel<?php echo $row['request_id']; ?>">Reservation Details</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
                           <div class="modal-body">
@@ -628,7 +641,7 @@
             </div>
 
             <!-- Approved Tab -->
-            <div class="tab-pane fade" id="approved-tab">
+            <div class="tab-pane fade" id="approved-tab" role="tabpanel">
             <?php while ($row = $approved->fetch_assoc()): ?>
               <div class="reservation-card">
                 <div class="d-flex justify-content-between">
@@ -643,11 +656,11 @@
                   </div>
                 </div>
                 <div class="mt-2">
-                  <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['id']; ?>">
+                  <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['request_id']; ?>">
                     View Details
                   </button>
                   <!-- Register Visitors Button here -->
-                  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#registerVisitorModal<?php echo $row['id']; ?>">
+                  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#registerVisitorModal<?php echo $row['request_id']; ?>">
                     Register Visitors
                   </button>
                 </div>
@@ -656,7 +669,7 @@
             </div>
 
             <!-- Rejected Tab -->
-            <div class="tab-pane fade" id="rejected-tab">
+            <div class="tab-pane fade" id="rejected-tab" role="tabpanel">
             <?php while ($row = $rejected->fetch_assoc()): ?>
               <div class="reservation-card">
                 <div class="d-flex justify-content-between">

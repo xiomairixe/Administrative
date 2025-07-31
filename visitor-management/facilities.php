@@ -15,7 +15,7 @@ $facilities = $conn->query($sql) or die ($conn->error);
   <title>ViaHale Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="VisitorManagement.css">
+  <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 

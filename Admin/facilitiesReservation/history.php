@@ -495,18 +495,18 @@
           include 'connection.php';
 
           $sql = "SELECT 
-                    rr.*, 
-                    v.fullname AS visitor_name,
-                    vl.check_in,
-                    vl.check_out
-                  FROM 
-                    reservation_requests rr
-                  LEFT JOIN 
-                    visitors v ON rr.id = v.reservation_id
-                  LEFT JOIN 
-                    visit_log vl ON v.id = vl.visitor_id";
+          rr.*, 
+          v.full_name AS visitor_name,
+          vl.check_in,
+          vl.check_out
+        FROM 
+          reservation_requests rr
+        LEFT JOIN 
+          visitors v ON rr.request_id = v.reservation_id
+        LEFT JOIN 
+          visit_log vl ON v.visitor_id = vl.visitor_id";
 
-          $result = $con->query($sql);
+          $result = $conn->query($sql);
 
           if ($result->num_rows > 0) {
             while($row = $result->fetch_assoc()) {
