@@ -1,7 +1,7 @@
 <?php
     $host = "localhost:3307";
     $user = "root";
-    $password ="YourStrongPasswordHere";
+    $password ="";
     $database = "Administrative";
 
 
