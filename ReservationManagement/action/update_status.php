@@ -28,7 +28,7 @@ if (isset($_GET['request_id']) && isset($_GET['status']) && $_GET['status'] == '
     }
 
     // Redirect back to reservation_requests.php
-    header("Location: ../request.php");
+    header("Location: ../bookings.php");
     exit();
 } else {
     echo "Invalid or missing parameters.";

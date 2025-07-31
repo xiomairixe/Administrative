@@ -66,7 +66,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="content-body">
         <!-- Actions -->
         <div class="mb-3 text-end">
@@ -76,10 +76,10 @@
 
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-3" id="reservationTabs" role="tablist">
-          <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#all-tab">All Reservations</a></li>
-          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pending-tab">Pending</a></li>
-          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#approved-tab">Approved</a></li>
-          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#rejected-tab">Rejected</a></li>
+          <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#all-tab" role="tab">All Reservations</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#pending-tab" role="tab">Pending</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#approved-tab" role="tab">Approved</a></li>
+          <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#rejected-tab" role="tab">Rejected</a></li>
         </ul>
 
         <!-- Filters -->
@@ -97,8 +97,8 @@
 
         <!-- Tab Content -->
         <div class="tab-content">
-        <!-- All Tab -->
-          <div class="tab-pane fade show active" id="all-tab">
+          <!-- All Tab -->
+          <div class="tab-pane fade show active" id="all-tab" role="tabpanel">
             <?php while ($row = $request->fetch_assoc()): ?>
             <?php
               $status = $row['status'];
@@ -168,10 +168,11 @@
               </div>
             </div>
             <?php endwhile; ?>
+          </div>
 
-            <!-- Pending Tab -->
-            <div class="tab-pane fade" id="pending-tab">
-              <?php while ($row = $pending->fetch_assoc()): ?>
+          <!-- Pending Tab -->
+          <div class="tab-pane fade" id="pending-tab" role="tabpanel">
+            <?php while ($row = $pending->fetch_assoc()): ?>
               <div class="reservation-card">
                 <div class="d-flex justify-content-between">
                   <div>
@@ -228,9 +229,10 @@
               </div>
             </div>
             <?php endwhile; ?>
+          </div>
 
-            <!-- Approved Tab -->
-            <div class="tab-pane fade" id="approved-tab">
+          <!-- Approved Tab -->
+          <div class="tab-pane fade" id="approved-tab" role="tabpanel">
             <?php while ($row = $approved->fetch_assoc()): ?>
               <div class="reservation-card">
                 <div class="d-flex justify-content-between">
@@ -255,10 +257,10 @@
                 </div>
               </div>
             <?php endwhile; ?>
-            </div>
+          </div>
 
-            <!-- Rejected Tab -->
-            <div class="tab-pane fade" id="rejected-tab">
+          <!-- Rejected Tab -->
+          <div class="tab-pane fade" id="rejected-tab" role="tabpanel">
             <?php while ($row = $rejected->fetch_assoc()): ?>
               <div class="reservation-card">
                 <div class="d-flex justify-content-between">
@@ -274,11 +276,12 @@
                 </div>
               </div>
             <?php endwhile; ?>
-            </div>
+          </div>
   </main>
 </div>
 
   <!-- Scripts -->
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Sidebar toggle for mobile
