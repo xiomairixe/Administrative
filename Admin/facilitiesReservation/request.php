@@ -541,8 +541,8 @@
                     </button>
                     
                     <?php if ($status === 'Pending') : ?>
-                      <a href="action/update_status.php?request_id=<?php echo $row['request_id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
-                      <a href="action/update_status.php?request_id=<?php echo $row['request_id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
+                      <a href="action/approved.php?request_id=<?php echo $row['request_id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
+                      <a href="action/rejected.php?request_id=<?php echo $row['request_id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
                       <?php endif; ?>
                   </div>
                 </div>

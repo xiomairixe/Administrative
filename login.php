@@ -11,7 +11,7 @@
   if(!empty($data)){
       $_SESSION['role']=$data['role'];
       $_SESSION['username']=$data['username'];
-      header("Location: /administrative/Administrative/Admin/index.php");
+      header("Location: Admin/index.php");
       exit;
     }else{
       $error ="Incorrect username or password. Please try again";
