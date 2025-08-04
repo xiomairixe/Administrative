@@ -1,3 +1,21 @@
+
+<?php
+include('connection.php');
+session_start();
+$error = "";
+
+if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'Super Admin') {
+
+   	header("Location: /Administrative/login.php");
+    $error = "Invalid Credentials.";
+    exit;
+}
+
+
+?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

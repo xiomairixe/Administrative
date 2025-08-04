@@ -17,9 +17,10 @@ html, body {
     height:30px;
 }
 .icon img{
-    height: 130px;
+    height: 60px;
     width: 130px;
-    margin-top: -20px;
+    margin-top: 20px;
+    margin-left: 20px;
 }
 
 .greetings{
@@ -34,12 +35,13 @@ html, body {
     transform: translate(-50%, -50%);
 }
 
-.greetings span{
+.greetings h1{
    color:#9a32da;
     margin-bottom: 10px;
     word-spacing:6px;
-    font-size: 20px;
+    font-size: 40px;
     font-weight: bolder;
+    
 }
 .greetings p{
     color:#9a32da;
