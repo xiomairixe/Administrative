@@ -179,6 +179,7 @@
                 <option value="Facility Admin">Facility Admin</option>
                 <option value="HR">HR</option>
                 <option value="Payroll">Payroll</option>
+                <option value="Legal Officer">Legal Officer</option>
               </select>
             </div>
 

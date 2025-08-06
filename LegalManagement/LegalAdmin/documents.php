@@ -1,3 +1,10 @@
+<?php
+  include  ('../connection.php');
+  $sql = "SELECT * FROM document WHERE docu_type = 'case_documents'";
+  $cases = $conn->query($sql) or die ($conn->error);
+  $row = $cases->fetch_assoc();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -461,13 +468,14 @@
               <tr class="table-group">
                 <td colspan="7" class="fw-bold bg-light">Smith vs. Johnson Corporation</td>
               </tr>
+              <?php do { ?>
               <tr data-status="approved" data-group="Smith vs. Johnson Corporation">
-                <td><i class="bi bi-file-earmark"></i> <a href="#">Employment Contract - John Smith.pdf</a></td>
-                <td>Contract</td>
-                <td><span class="text-success"><i class="bi bi-check-circle"></i> Approved</span></td>
-                <td>2023-11-15</td>
-                <td>Jane Doe</td>
-                <td>2.0</td>
+                <td><i class="bi bi-file-earmark"></i> <a href="#"><?php echo $row['file_name'];?> - <?php echo $row['file_path'];?></a></td>
+                <td><?php echo $row['docu_type'];?></td>
+                <td><span class="text-success"><i class="bi bi-check-circle"></i> <?php echo $row['status'];?></span></td>
+                <td><?php echo $row['uploaded_at'];?>5</td>
+                <td><?php echo $row['uploaded_by'];?></td>
+                <td><?php echo $row['document_id'];?></td>
                 <td>
                   <button class="btn btn-link p-0 me-2" title="View" onclick="viewDocument('Employment Contract - John Smith.pdf')"><i class="bi bi-eye"></i></button>
                   <button class="btn btn-link p-0 me-2" title="Edit" onclick="requestRevision('Employment Contract - John Smith.pdf')"><i class="bi bi-pencil-square"></i></button>
@@ -476,97 +484,7 @@
                   <button class="btn btn-link p-0" title="More" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
                 </td>
               </tr>
-              <tr data-status="rejected" data-group="Smith vs. Johnson Corporation">
-                <td><i class="bi bi-file-earmark"></i> <a href="#">Legal Brief - Smith vs. Johnson.pdf</a></td>
-                <td>Brief</td>
-                <td><span class="text-danger"><i class="bi bi-x-circle"></i> Rejected</span></td>
-                <td>2023-11-13</td>
-                <td>Emily Chen</td>
-                <td>3.1</td>
-                <td>
-                  <button class="btn btn-link p-0 me-2" title="View" onclick="viewDocument('Legal Brief - Smith vs. Johnson.pdf')"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Edit" onclick="requestRevision('Legal Brief - Smith vs. Johnson.pdf')"><i class="bi bi-pencil-square"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Download" onclick="downloadDocument('Legal Brief - Smith vs. Johnson.pdf')"><i class="bi bi-download"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Manage Access" onclick="manageAccess('Legal Brief - Smith vs. Johnson.pdf')"><i class="bi bi-share"></i></button>
-                  <button class="btn btn-link p-0" title="More" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-                </td>
-              </tr>
-              <!-- Group: TechCorp Partnership -->
-              <tr class="table-group">
-                <td colspan="7" class="fw-bold bg-light">TechCorp Partnership</td>
-              </tr>
-              <tr data-status="pending" data-group="TechCorp Partnership">
-                <td><i class="bi bi-file-earmark"></i> <a href="#">NDA - TechCorp Partnership.docx</a></td>
-                <td>NDA</td>
-                <td><span class="text-warning"><i class="bi bi-clock"></i> Pending</span></td>
-                <td>2023-11-14</td>
-                <td>Robert Johnson</td>
-                <td>1.0</td>
-                <td>
-                  <button class="btn btn-link p-0 me-2" title="View" onclick="viewDocument('NDA - TechCorp Partnership.docx')"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Edit" onclick="requestRevision('NDA - TechCorp Partnership.docx')"><i class="bi bi-pencil-square"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Download" onclick="downloadDocument('NDA - TechCorp Partnership.docx')"><i class="bi bi-download"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Manage Access" onclick="manageAccess('NDA - TechCorp Partnership.docx')"><i class="bi bi-share"></i></button>
-                  <button class="btn btn-link p-0" title="More" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-                </td>
-              </tr>
-              <!-- Group: Property Purchase -->
-              <tr class="table-group">
-                <td colspan="7" class="fw-bold bg-light">Property Purchase</td>
-              </tr>
-              <tr data-status="approved" data-group="Property Purchase">
-                <td><i class="bi bi-file-earmark"></i> <a href="#">Property Purchase Agreement.pdf</a></td>
-                <td>Agreement</td>
-                <td><span class="text-success"><i class="bi bi-check-circle"></i> Approved</span></td>
-                <td>2023-11-12</td>
-                <td>Michael Wong</td>
-                <td>1.2</td>
-                <td>
-                  <button class="btn btn-link p-0 me-2" title="View" onclick="viewDocument('Property Purchase Agreement.pdf')"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Edit" onclick="requestRevision('Property Purchase Agreement.pdf')"><i class="bi bi-pencil-square"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Download" onclick="downloadDocument('Property Purchase Agreement.pdf')"><i class="bi bi-download"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Manage Access" onclick="manageAccess('Property Purchase Agreement.pdf')"><i class="bi bi-share"></i></button>
-                  <button class="btn btn-link p-0" title="More" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-                </td>
-              </tr>
-              <!-- Group: Compliance -->
-              <tr class="table-group">
-                <td colspan="7" class="fw-bold bg-light">Compliance</td>
-              </tr>
-              <tr data-status="pending" data-group="Compliance">
-                <td><i class="bi bi-file-earmark"></i> <a href="#">Compliance Report Q3 2023.xlsx</a></td>
-                <td>Report</td>
-                <td><span class="text-warning"><i class="bi bi-clock"></i> Pending</span></td>
-                <td>2023-11-10</td>
-                <td>Sarah Miller</td>
-                <td>2.3</td>
-                <td>
-                  <button class="btn btn-link p-0 me-2" title="View" onclick="viewDocument('Compliance Report Q3 2023.xlsx')"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Edit" onclick="requestRevision('Compliance Report Q3 2023.xlsx')"><i class="bi bi-pencil-square"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Download" onclick="downloadDocument('Compliance Report Q3 2023.xlsx')"><i class="bi bi-download"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Manage Access" onclick="manageAccess('Compliance Report Q3 2023.xlsx')"><i class="bi bi-share"></i></button>
-                  <button class="btn btn-link p-0" title="More" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-                </td>
-              </tr>
-              <!-- Group: IP -->
-              <tr class="table-group">
-                <td colspan="7" class="fw-bold bg-light">Intellectual Property</td>
-              </tr>
-              <tr data-status="archived" data-group="Intellectual Property">
-                <td><i class="bi bi-file-earmark"></i> <a href="#">Intellectual Property Rights.pdf</a></td>
-                <td>Policy</td>
-                <td><span class="text-secondary"><i class="bi bi-archive"></i> Archived</span></td>
-                <td>2023-10-28</td>
-                <td>David Clark</td>
-                <td>4.0</td>
-                <td>
-                  <button class="btn btn-link p-0 me-2" title="View" onclick="viewDocument('Intellectual Property Rights.pdf')"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Edit" onclick="requestRevision('Intellectual Property Rights.pdf')"><i class="bi bi-pencil-square"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Download" onclick="downloadDocument('Intellectual Property Rights.pdf')"><i class="bi bi-download"></i></button>
-                  <button class="btn btn-link p-0 me-2" title="Manage Access" onclick="manageAccess('Intellectual Property Rights.pdf')"><i class="bi bi-share"></i></button>
-                  <button class="btn btn-link p-0" title="More" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
-                </td>
-              </tr>
+              <?php } while ($row = $cases->fetch_assoc()) ?>
             </tbody>
           </table>
         </div>

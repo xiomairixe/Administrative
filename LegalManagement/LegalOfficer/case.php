@@ -1,3 +1,58 @@
+<?php
+  include ('../connection.php');
+
+  // Get all cases from DB
+  $case_sql = "SELECT c.*, u.username AS assigned_name 
+               FROM cases c 
+               LEFT JOIN users u ON c.assigned_to = u.user_id
+               ORDER BY c.start_date DESC";
+  $case_result = $conn->query($case_sql);
+
+  // Prepare cases array for frontend JS
+  $cases = [];
+  while ($case = $case_result->fetch_assoc()) {
+      // Get documents for this case
+      $doc_sql = "SELECT * FROM case_documents WHERE case_id = ?";
+      $doc_stmt = $conn->prepare($doc_sql);
+      $doc_stmt->bind_param("i", $case['case_id']);
+      $doc_stmt->execute();
+      $doc_result = $doc_stmt->get_result();
+      $documents = [];
+      while ($doc = $doc_result->fetch_assoc()) {
+          $documents[] = [
+              'title' => $doc['title'],
+              'type' => $doc['type'],
+              'version' => $doc['version'],
+              'status' => $doc['status'],
+              'file_path' => $doc['file_path']
+          ];
+      }
+      $doc_stmt->close();
+
+      // Get notes for this case (from case_notes table)
+      $note_sql = "SELECT n.note, u.username FROM case_notes n LEFT JOIN users u ON n.user_id = u.user_id WHERE n.case_id = ?";
+      $note_stmt = $conn->prepare($note_sql);
+      $note_stmt->bind_param("i", $case['case_id']);
+      $note_stmt->execute();
+      $note_result = $note_stmt->get_result();
+      $notes = [];
+      while ($note = $note_result->fetch_assoc()) {
+          $notes[] = $note['username'] . ': ' . $note['note'];
+      }
+      $note_stmt->close();
+
+      $cases[] = [
+          'id' => (int)$case['case_id'],
+          'name' => $case['name'],
+          'client' => $case['client'],
+          'status' => $case['status'],
+          'documents' => $documents,
+          'assignedTo' => $case['assigned_name'] ?? '',
+          'startDate' => $case['start_date'],
+          'notes' => $notes
+      ];
+  }
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -332,75 +387,9 @@
     </div>
   </div>
   <script>
-    const cases = [
-      {
-        id: 1,
-        name: "ABC Corp Hiring",
-        client: "ABC Corporation",
-        status: "Active",
-        documents: [
-          { title: "Employment Contract - ABC Corp", type: "Contract", version: "v2.1", status: "In Review" },
-          { title: "Offer Letter - ABC Corp", type: "Letter", version: "v1.0", status: "Completed" },
-          { title: "Background Check Authorization", type: "Form", version: "v1.0", status: "Completed" }
-        ],
-        assignedTo: "John Doe",
-        startDate: "2023-04-15",
-        notes: []
-      },
-      {
-        id: 2,
-        name: "XYZ Partnership",
-        client: "XYZ Technologies",
-        status: "Active",
-        documents: [
-          { title: "NDA - XYZ Technologies", type: "Non-Disclosure", version: "v1.3", status: "Pending Clarification" },
-          { title: "Collaboration Agreement", type: "Agreement", version: "v1.0", status: "Completed" }
-        ],
-        assignedTo: "John Doe",
-        startDate: "2023-05-01",
-        notes: []
-      },
-      {
-        id: 3,
-        name: "Office Relocation",
-        client: "Internal",
-        status: "Active",
-        documents: [
-          { title: "Lease Agreement - Office Space", type: "Real Estate", version: "v3.0", status: "Completed" },
-          { title: "Move Checklist", type: "Checklist", version: "v1.0", status: "Completed" }
-        ],
-        assignedTo: "John Doe",
-        startDate: "2023-03-20",
-        notes: []
-      },
-      {
-        id: 4,
-        name: "Product Innovation",
-        client: "Research Division",
-        status: "Active",
-        documents: [
-          { title: "Patent Application - New Product", type: "Intellectual Property", version: "v1.0", status: "Draft" }
-        ],
-        assignedTo: "John Doe",
-        startDate: "2023-06-10",
-        notes: []
-      },
-      {
-        id: 5,
-        name: "DEF Acquisition",
-        client: "DEF Inc",
-        status: "Active",
-        documents: [
-          { title: "Merger Agreement - DEF Inc", type: "Corporate", version: "v2.4", status: "In Review" },
-          { title: "Due Diligence Report", type: "Report", version: "v1.0", status: "Completed" }
-        ],
-        assignedTo: "John Doe",
-        startDate: "2023-02-18",
-        notes: []
-      }
-    ];
-
-    let selectedCaseId = cases[0].id;
+    // Load PHP cases array into JS
+    const cases = <?php echo json_encode($cases); ?>;
+    let selectedCaseId = cases.length > 0 ? cases[0].id : null;
 
     function renderCaseList() {
       const list = document.getElementById('caseList');
@@ -427,10 +416,11 @@
 
     function renderCaseDetails() {
       const c = cases.find(ca => ca.id === selectedCaseId);
+      if (!c) return;
       document.getElementById('caseDetailHeader').innerHTML = `
-    <h4 class="fw-bold mb-1">${c.name}</h4>
-    <div class="mb-2 text-muted">Client: ${c.client}</div>
-  `;
+        <h4 class="fw-bold mb-1">${c.name}</h4>
+        <div class="mb-2 text-muted">Client: ${c.client}</div>
+      `;
       document.getElementById('caseStartDate').textContent = c.startDate;
       document.getElementById('caseAssignedTo').textContent = c.assignedTo;
       document.getElementById('caseDocCount').textContent = `${c.documents.length} total`;
@@ -443,22 +433,22 @@
         else if (doc.status === 'Completed') statusClass = 'status-completed';
         else if (doc.status === 'Draft') statusClass = 'status-draft';
         docRows += `
-      <tr>
-        <td><i class="bi bi-file-earmark-text"></i> ${doc.title}</td>
-        <td>${doc.type}</td>
-        <td>${doc.version}</td>
-        <td class="${statusClass}">${doc.status}</td>
-        <td class="table-actions">
-          <a href="#" onclick="alert('View: ${doc.title}');return false;">View</a>
-          <a href="#" onclick="alert('Edit: ${doc.title}');return false;">Edit</a>
-        </td>
-      </tr>
-    `;
+          <tr>
+            <td><i class="bi bi-file-earmark-text"></i> ${doc.title}</td>
+            <td>${doc.type}</td>
+            <td>${doc.version}</td>
+            <td class="${statusClass}">${doc.status}</td>
+            <td class="table-actions">
+              <a href="#" onclick="alert('View: ${doc.title}');return false;">View</a>
+              <a href="#" onclick="alert('Edit: ${doc.title}');return false;">Edit</a>
+            </td>
+          </tr>
+        `;
       });
       document.getElementById('caseDocTable').innerHTML = docRows;
       // Notes
       const notesDiv = document.getElementById('caseNotes');
-      if (c.notes.length === 0) {
+      if (!c.notes || c.notes.length === 0) {
         notesDiv.innerHTML = 'No case notes yet.';
       } else {
         notesDiv.innerHTML = c.notes.map(n => `<div class="mb-2">${n}</div>`).join('');
@@ -474,9 +464,23 @@
     function addNote() {
       const note = prompt('Enter your note for this case:');
       if (note && note.trim()) {
-        const c = cases.find(ca => ca.id === selectedCaseId);
-        c.notes.push(note.trim());
-        renderCaseDetails();
+        // AJAX to backend to save note
+        fetch('add_case_note.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `case_id=${selectedCaseId}&note=${encodeURIComponent(note)}`
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // Add note to JS array and re-render
+            const c = cases.find(ca => ca.id === selectedCaseId);
+            c.notes.push(data.note_display);
+            renderCaseDetails();
+          } else {
+            alert('Failed to add note.');
+          }
+        });
       }
     }
 

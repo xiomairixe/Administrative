@@ -1,3 +1,15 @@
+<?php 
+ include('../connection.php');
+ 
+ $sql = "SELECT * FROM legal_requests";
+ $cases = $conn->query($sql) or die ($conn->error);
+ $row = $cases->fetch_assoc();
+
+ $sql1 = "SELECT * FROM users WHERE role = 'Legal Officer'";
+ $user = $conn->query($sql1) or die ($conn->error);
+ $row1 = $user->fetch_assoc();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -458,18 +470,19 @@
             </thead>
             <tbody id="casesTbody">
               <!-- Example rows, replace with PHP loop for dynamic data -->
+               <?php do {?>
               <tr data-status="active">
                 <td>
                   <i class="bi bi-briefcase text-primary"></i>
-                  <span class="fw-bold">Smith vs. Johnson Corporation</span><br>
-                  <span class="text-muted small">#101</span>
+                  <span class="fw-bold"><?php echo $row['description'];?></span><br>
+                  <span class="text-muted small"><?php echo $row['request_id'];?></span>
                 </td>
-                <td>Litigation</td>
-                <td><span class="badge bg-primary">Active</span></td>
-                <td><span class="badge bg-danger bg-opacity-10 text-danger">High</span></td>
-                <td><i class="bi bi-calendar"></i> 2023-10-15</td>
-                <td><i class="bi bi-person"></i> Jane Doe</td>
-                <td><i class="bi bi-file-earmark"></i> 12</td>
+                <td><?php echo $row['request_type'];?></td>
+                <td><span class="badge bg-primary"><?php echo $row['status'];?></span></td>
+                <td><span class="badge bg-danger bg-opacity-10 text-danger"><?php echo $row['priority'];?></span></td>
+                <td><i class="bi bi-calendar"></i> <?php echo $row['created_at'];?></td>
+                <td><i class="bi bi-person"></i><?php echo $row['user_id'];?></td>
+                <td><i class="bi bi-file-earmark"></i> <?php echo $row['stakeholders'];?></td>
                 <td>
                   <a href="#" class="text-decoration-none me-2">View</a>
                   <button class="btn btn-sm btn-outline-secondary" onclick="openAssignModal('Smith vs. Johnson Corporation')">Assign</button>
@@ -480,116 +493,7 @@
                   </ul>
                 </td>
               </tr>
-              <tr data-status="active">
-                <td>
-                  <i class="bi bi-briefcase text-primary"></i>
-                  <span class="fw-bold">Intellectual Property Claim #45</span><br>
-                  <span class="text-muted small">#102</span>
-                </td>
-                <td>IP</td>
-                <td><span class="badge bg-primary">Active</span></td>
-                <td><span class="badge bg-warning bg-opacity-10 text-warning">Medium</span></td>
-                <td><i class="bi bi-calendar"></i> 2023-09-28</td>
-                <td><i class="bi bi-person"></i> John Smith</td>
-                <td><i class="bi bi-file-earmark"></i> 8</td>
-                <td>
-                  <a href="#" class="text-decoration-none me-2">View</a>
-                  <button class="btn btn-sm btn-outline-secondary" onclick="openAssignModal('Intellectual Property Claim #45')">Assign</button>
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Edit</a></li>
-                    <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
-                  </ul>
-                </td>
-              </tr>
-              <tr data-status="pending">
-                <td>
-                  <i class="bi bi-briefcase text-primary"></i>
-                  <span class="fw-bold">Contract Dispute - TechServe</span><br>
-                  <span class="text-muted small">#103</span>
-                </td>
-                <td>Contract</td>
-                <td><span class="badge bg-warning text-dark">Pending</span></td>
-                <td><span class="badge bg-success bg-opacity-10 text-success">Low</span></td>
-                <td><i class="bi bi-calendar"></i> 2023-11-02</td>
-                <td><i class="bi bi-person"></i> Emily Chen</td>
-                <td><i class="bi bi-file-earmark"></i> 5</td>
-                <td>
-                  <a href="#" class="text-decoration-none me-2">View</a>
-                  <button class="btn btn-sm btn-outline-secondary" onclick="openAssignModal('Contract Dispute - TechServe')">Assign</button>
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Edit</a></li>
-                    <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
-                  </ul>
-                </td>
-              </tr>
-              <tr data-status="active">
-                <td>
-                  <i class="bi bi-briefcase text-primary"></i>
-                  <span class="fw-bold">Employment Termination Review</span><br>
-                  <span class="text-muted small">#104</span>
-                </td>
-                <td>Employment</td>
-                <td><span class="badge bg-primary">Active</span></td>
-                <td><span class="badge bg-warning bg-opacity-10 text-warning">Medium</span></td>
-                <td><i class="bi bi-calendar"></i> 2023-10-20</td>
-                <td><i class="bi bi-person"></i> Robert Johnson</td>
-                <td><i class="bi bi-file-earmark"></i> 7</td>
-                <td>
-                  <a href="#" class="text-decoration-none me-2">View</a>
-                  <button class="btn btn-sm btn-outline-secondary" onclick="openAssignModal('Employment Termination Review')">Assign</button>
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Edit</a></li>
-                    <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
-                  </ul>
-                </td>
-              </tr>
-              <tr data-status="closed">
-                <td>
-                  <i class="bi bi-briefcase text-primary"></i>
-                  <span class="fw-bold">Merger Documentation - Acme Co.</span><br>
-                  <span class="text-muted small">#105</span>
-                </td>
-                <td>M&amp;A</td>
-                <td><span class="badge bg-secondary">Closed</span></td>
-                <td><span class="badge bg-danger bg-opacity-10 text-danger">High</span></td>
-                <td><i class="bi bi-calendar"></i> 2023-08-15</td>
-                <td><i class="bi bi-person"></i> Sarah Miller</td>
-                <td><i class="bi bi-file-earmark"></i> 24</td>
-                <td>
-                  <a href="#" class="text-decoration-none me-2">View</a>
-                  <button class="btn btn-sm btn-outline-secondary" onclick="openAssignModal('Merger Documentation - Acme Co.')">Assign</button>
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Edit</a></li>
-                    <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
-                  </ul>
-                </td>
-              </tr>
-              <tr data-status="pending">
-                <td>
-                  <i class="bi bi-briefcase text-primary"></i>
-                  <span class="fw-bold">Real Estate Acquisition</span><br>
-                  <span class="text-muted small">#106</span>
-                </td>
-                <td>Real Estate</td>
-                <td><span class="badge bg-warning text-dark">Pending</span></td>
-                <td><span class="badge bg-warning bg-opacity-10 text-warning">Medium</span></td>
-                <td><i class="bi bi-calendar"></i> 2023-11-05</td>
-                <td><i class="bi bi-person"></i> Michael Wong</td>
-                <td><i class="bi bi-file-earmark"></i> 9</td>
-                <td>
-                  <a href="#" class="text-decoration-none me-2">View</a>
-                  <button class="btn btn-sm btn-outline-secondary" onclick="openAssignModal('Real Estate Acquisition')">Assign</button>
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Edit</a></li>
-                    <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
-                  </ul>
-                </td>
-              </tr>
+              <?php } while ($row = $cases->fetch_assoc()); ?>
             </tbody>
           </table>
         </div>
@@ -627,12 +531,9 @@
           <label class="form-label">Assign to</label>
           <select class="form-select" id="assignTo" required>
             <option value="">Select user</option>
-            <option>Jane Doe</option>
-            <option>John Smith</option>
-            <option>Emily Chen</option>
-            <option>Robert Johnson</option>
-            <option>Sarah Miller</option>
-            <option>Michael Wong</option>
+            <?php do {?>
+            <option><?php echo $row1['fullname'];?></option>
+            <?php } while ($row1 = $user->fetch_assoc()); ?>
           </select>
         </div>
         <div class="mb-3">
