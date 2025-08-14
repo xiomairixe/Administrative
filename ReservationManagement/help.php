@@ -335,7 +335,6 @@
     <a href="facilities.php"><i class="bi bi-building"></i> Facilities</a>
     <a href="bookings.php"><i class="bi bi-calendar-check"></i> Bookings</a>
     <a href="reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
-    <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
     <hr>
     <a href="account.php"><i class="bi bi-person"></i> Account</a>
     <a href="setting.php"><i class="bi bi-gear"></i> Settings</a>

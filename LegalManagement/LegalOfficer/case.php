@@ -308,7 +308,7 @@
         </span>
         <div class="d-flex align-items-center gap-2">
           <img src="https://ui-avatars.com/api/?name=John+Doe" alt="Profile" class="profile-img">
-          <span class="profile-name">John Doe</span>
+          <span class="profile-name">Ramos Lance</span>
         </div>
       </div>
     </div>
