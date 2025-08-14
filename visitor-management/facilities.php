@@ -126,7 +126,7 @@ $facilities = $conn->query($sql) or die ($conn->error);
                 <!--Action Buttons Based on Facility Status -->
                 <div class="mt-auto d-flex justify-content-between">
                   <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#facilityModal"
-                    data-img="/Administrative/LegalManagement/Legal/LegalAdmin/FacilityReservation/uploads<?php echo $row['image']; ?>"
+                    data-img="/Administrative/ReservationManagement/uploads/<?php echo $row['image'];  ?>"
                     data-name="<?php echo $row['facility_name']; ?>"
                     data-location="<?php echo $row['location']; ?>"
                     data-type="<?php echo $row['type']; ?>"
@@ -275,7 +275,6 @@ $facilities = $conn->query($sql) or die ($conn->error);
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Edit Facility</button>
       </div>
     </div>
   </div>

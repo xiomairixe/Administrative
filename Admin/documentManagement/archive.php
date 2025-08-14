@@ -2,7 +2,7 @@
   require 'connection.php';
 
   // Fetch only archived documents
-  $sql = "SELECT * FROM document WHERE status = 'archived' ORDER BY upload_date DESC";
+  $sql = "SELECT * FROM document WHERE status = 'archived' ORDER BY uploaded_at DESC";
   $archived = $conn->query($sql);
 ?>
 
@@ -462,7 +462,7 @@
               $filePath = "uploads/" . $row['file_name'];
               $size = file_exists($filePath) ? round(filesize($filePath) / 1024 / 1024, 2) . " MB" : "N/A";
           ?>
-            <div class="col-md-4 card-doc" data-title="<?php echo htmlspecialchars($row['title']); ?>">
+            <div class="col-md-4 card-doc" data-title="<?php echo htmlspecialchars($row['file_name']); ?>">
               <div class="card h-100">
                 <div class="card-body">
                   <div class="d-flex align-items-center mb-2">
@@ -470,12 +470,12 @@
                       <i class="bi bi-file-earmark-text" style="color:#6366f1;font-size:1.2rem;"></i>
                     </span>
                     <div>
-                      <strong class="text-dark"><?php echo htmlspecialchars($row['title']); ?></strong>
+                      <strong class="text-dark"><?php echo htmlspecialchars($row['file_name']); ?></strong>
                       <div style="font-size:0.95rem;color:#6c757d;"><?php echo htmlspecialchars($row['folder_id']); ?></div>
                     </div>
                   </div>
                   <div class="mb-2"><small>Size:</small> <?php echo $size; ?></div>
-                  <div class="mb-2"><small>Modified:</small> <?php echo date("M d, Y", strtotime($row['upload_date'])); ?></div>
+                  <div class="mb-2"><small>Modified:</small> <?php echo date("M d, Y", strtotime($row['uploaded_at'])); ?></div>
                   <div class="mb-2"><small>By:</small> <?php echo htmlspecialchars($row['description']); ?></div>
                 </div>
                 <div class="card-footer d-flex justify-content-end gap-2">

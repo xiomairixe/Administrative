@@ -464,13 +464,13 @@ require 'connection.php';
               </thead>
               <tbody>
               <?php
-              $result = $conn->query("SELECT * FROM document WHERE status = 'trash' ORDER BY upload_date DESC");
+              $result = $conn->query("SELECT * FROM document WHERE status = 'trash' ORDER BY uploaded_at DESC");
               while ($row = $result->fetch_assoc()):
               ?>
                 <tr>
-                  <td><?= htmlspecialchars($row['title']) ?></td>
                   <td><?= htmlspecialchars($row['file_name']) ?></td>
-                  <td><?= date("M d, Y", strtotime($row['upload_date'])) ?></td>
+                  <td><?= htmlspecialchars($row['file_name']) ?></td>
+                  <td><?= date("M d, Y", strtotime($row['uploaded_at'])) ?></td>
                   <td>
                     <form method="post" action="action/restore.php" style="display:inline;">
                       <input type="hidden" name="id" value="<?= $row['document_id'] ?>">

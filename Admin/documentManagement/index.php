@@ -507,8 +507,8 @@
             <div class="bg-white rounded-3 shadow-sm p-3">
               <div id="gridView" class="row g-3">
                 <?php
-                $result = $conn->query("SELECT * FROM document WHERE status != 'archived' ORDER BY upload_date DESC");
-                $result = $conn->query("SELECT * FROM document WHERE status != 'trash' ORDER BY upload_date DESC");
+                $result = $conn->query("SELECT * FROM document WHERE status != 'archived' ORDER BY uploaded_at DESC");
+                $result = $conn->query("SELECT * FROM document WHERE status != 'trash' ORDER BY uploaded_at DESC");
                 while ($row = $result->fetch_assoc()):
                   $filePath = "uploads/" . $row['file_name'];
                   $size = file_exists($filePath) ? round(filesize($filePath) / 1024 / 1024, 2) . " MB" : "N/A";
@@ -521,12 +521,12 @@
                           <i class="bi bi-file-earmark-text" style="color:#6366f1;font-size:1.2rem;"></i>
                         </span>
                         <div>
-                          <strong class="text-dark"><?php echo htmlspecialchars($row['title']); ?></strong>
+                          <strong class="text-dark"><?php echo htmlspecialchars($row['file_name']); ?></strong>
                           <div style="font-size:0.95rem;color:#6c757d;"><?php echo htmlspecialchars($row['folder_id']); ?></div>
                         </div>
                       </div>
                       <div class="mb-2"><small>Size:</small> <?php echo $size; ?></div>
-                      <div class="mb-2"><small>Modified:</small> <?php echo date("M d, Y", strtotime($row['upload_date'])); ?></div>
+                      <div class="mb-2"><small>Modified:</small> <?php echo date("M d, Y", strtotime($row['uploaded_at'])); ?></div>
                       <div class="mb-2"><small>By:</small> <?php echo htmlspecialchars($row['description']); ?></div>
                     </div>
                     <div class="card-footer d-flex justify-content-end gap-2">
@@ -558,7 +558,7 @@
                     </thead>
                     <tbody id="documentTable">
                       <?php
-                      $result = $conn->query("SELECT * FROM document WHERE status != 'archived' ORDER BY upload_date DESC");
+                      $result = $conn->query("SELECT * FROM document WHERE status != 'archived' ORDER BY uploaded_at DESC");
                       while ($row = $result->fetch_assoc()):
                         $filePath = "uploads/" . $row['file_name'];
                         $size = file_exists($filePath) ? round(filesize($filePath) / 1024 / 1024, 2) . " MB" : "N/A";
@@ -570,13 +570,13 @@
                                 <i class="bi bi-file-earmark-text" style="color:#6366f1;font-size:1.2rem;"></i>
                               </span>
                               <div>
-                                <strong class="text-dark"><?php echo htmlspecialchars($row['title']); ?></strong>
+                                <strong class="text-dark"><?php echo htmlspecialchars($row['file_name']); ?></strong>
                                 <div style="font-size:0.95rem;color:#6c757d;"><?php echo htmlspecialchars($row['folder_id']); ?></div>
                               </div>
                             </span>
                           </td>
                           <td><?php echo $size; ?></td>
-                          <td><?php echo date("M d, Y", strtotime($row['upload_date'])); ?></td>
+                          <td><?php echo date("M d, Y", strtotime($row['uploaded_at'])); ?></td>
                           <td><?php echo htmlspecialchars($row['description']); ?></td>
                           <td>
                             <a href="uploads/<?php echo urlencode($row['file_name']); ?>" class="btn btn-sm btn-outline-secondary" download title="Download"><i class="bi bi-download"></i></a>

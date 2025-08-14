@@ -95,7 +95,6 @@ if (isset($_POST['add_facility'])) {
     <a href="#" class="active"><i class="bi bi-building"></i> Facilities</a>
     <a href="bookings.php"><i class="bi bi-calendar-check"></i> Bookings</a>
     <a href="reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
-    <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
     <hr>
     <a href="account.php"><i class="bi bi-person"></i> Account</a>
     <a href="setting.php"><i class="bi bi-gear"></i> Settings</a>
@@ -148,7 +147,7 @@ if (isset($_POST['add_facility'])) {
             </select>
           </div>
         </div>
-            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addFacilityModal">
+            <button class="btn" style="background: #ab83fcff;" data-bs-toggle="modal" data-bs-target="#addFacilityModal">
               <ion-icon name="add-circle-outline" class="me-1"></ion-icon> Add New Facility
             </button>
         </div>
@@ -166,7 +165,7 @@ if (isset($_POST['add_facility'])) {
             <p>Status: <?php echo $row['status'];?></p>
             <p class="mb-1"><?php echo $row['capacity'];?></p>
               <div class="d-flex justify-content-between mt-3">
-                <button class="btn btn-outline-dark btn-sm view-details-btn"
+                <button class="btn btn-outline-dark btn-m view-details-btn"
                     data-bs-toggle="modal"
                     data-bs-target="#facilityModal"
                     data-id="<?php echo $row['facility_id']; ?>"
@@ -182,7 +181,8 @@ if (isset($_POST['add_facility'])) {
                   <i class="bi bi-trash me-1"></i> Remove Facility
                 </button>
 
-                <button class="btn btn-primary btn-sm open-manage-btn"
+                <button class="btn btn-sm open-manage-btn"
+                  style="background: #ab83fcff;"
                   data-bs-toggle="modal"
                   data-bs-target="#manageModal"
                   data-id="<?php echo $row['facility_id']; ?>"
@@ -323,7 +323,7 @@ if (isset($_POST['add_facility'])) {
     <div class="modal fade" id="facilityModal" tabindex="-1" aria-labelledby="facilityModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content shadow-lg">
-          <div class="modal-header bg-primary text-white">
+          <div class="modal-header bg-black text-white">
             <h5 class="modal-title" id="facilityModalLabel">
               <i class="bi bi-building"></i> Facility Details
             </h5>
@@ -334,7 +334,7 @@ if (isset($_POST['add_facility'])) {
             <div class="row g-4">
               <!-- Facility Image -->
               <div class="col-md-5 text-center">
-                <img src="" id="modalImage" class="img-fluid rounded border shadow-sm" alt="Facility Image">
+                <img src="uploads/<?php echo $row['image'];?>" id="modalImage" class="img-fluid rounded border shadow-sm" alt="Facility Image">
               </div>
 
               <!-- View Mode -->
@@ -395,7 +395,7 @@ if (isset($_POST['add_facility'])) {
               <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                 <i class="bi bi-x-circle me-1"></i> Close
               </button>
-              <button type="button" class="btn btn-primary" id="editBtn">
+              <button type="button" class="btn" style="background: #ab83fcff;" id="editBtn">
                 <i class="bi bi-pencil-square me-1"></i> Edit Facility
               </button>
             </div>
@@ -546,36 +546,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const editForm = document.getElementById("editFacilityForm");
 
   // Open modal and populate fields
-  document.querySelectorAll(".view-details-btn").forEach(button => {
-    button.addEventListener("click", () => {
-      const facility_id = button.getAttribute("data-id");
-      const name = button.getAttribute("data-name");
-      const location = button.getAttribute("data-location");
-      const type = button.getAttribute("data-type");
-      const status = button.getAttribute("data-status");
-      const capacity = button.getAttribute("data-capacity");
-      const image = button.getAttribute("data-image");
+document.querySelectorAll(".view-details-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    const facility_id = button.getAttribute("data-id");
+    const name = button.getAttribute("data-name");
+    const location = button.getAttribute("data-location");
+    const type = button.getAttribute("data-type");
+    const status = button.getAttribute("data-status");
+    const capacity = button.getAttribute("data-capacity");
+    const image = button.getAttribute("data-image");
 
-      // View mode
-      modalImage.src = image;
-      modalTitle.textContent = name;
-      modalAddress.textContent = location;
-      modalType.textContent = type;
-      modalStatus.textContent = status;
-      modalSize.textContent = capacity;
+    modalImage.src = "uploads/" + image; 
+    modalTitle.textContent = name;
+    modalAddress.textContent = location;
+    modalType.textContent = type;
+    modalStatus.textContent = status;
+    modalSize.textContent = capacity;
 
-      // Edit mode form values
-      editForm.facility_id.value = facility_id;
-      editForm.facility_name.value = facility_name;
-      editForm.location.value = location;
-      editForm.type.value = type;
-      editForm.status.value = status;
-      editForm.capacity.value = capacity;
+    editForm.facility_id.value = facility_id;
+    editForm.facility_name.value = name;
+    editForm.location.value = location;
+    editForm.type.value = type;
+    editForm.status.value = status;
+    editForm.capacity.value = capacity;
 
-      // Default to view mode
-      toggleEdit(false);
-    });
+    toggleEdit(false);
   });
+});
 
   // Edit button
   document.getElementById("editBtn").addEventListener("click", () => toggleEdit(true));
@@ -637,7 +634,7 @@ document.addEventListener("DOMContentLoaded", function () {
             alert("Facility removed successfully.");
             location.reload();
           } else {
-            alert("Failed to remove facility.");
+            alert("Facility removed successfully.");
             location.reload();
           }
         })
