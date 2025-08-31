@@ -1,12 +1,45 @@
 <?php
   require 'connection.php';
-?>
 
+  // Get all folders with their names and counts
+  $folders = [];
+  $folderCounts = [];
+  $folderNames = [];
+  $res = $conn->query("SELECT f.folder_id, f.folder_name, COUNT(d.document_id) as cnt 
+                       FROM folder f 
+                       LEFT JOIN document d ON f.folder_id = d.folder_id 
+                       GROUP BY f.folder_id, f.folder_name");
+  $totalCount = 0;
+  while ($f = $res->fetch_assoc()) {
+    $folders[] = $f['folder_id'];
+    $folderNames[$f['folder_id']] = $f['folder_name'];
+    $folderCounts[$f['folder_id']] = $f['cnt'];
+    $totalCount += $f['cnt'];
+  }
+
+  // Get all unique tags/categories from documents
+  $tags = [];
+  $tagRes = $conn->query("SELECT DISTINCT tag FROM document WHERE tag IS NOT NULL AND tag != ''");
+  while ($t = $tagRes->fetch_assoc()) {
+    foreach (explode(',', $t['tag']) as $tag) {
+      $tag = trim($tag);
+      if ($tag && !in_array($tag, $tags)) $tags[] = $tag;
+    }
+  }
+  sort($tags);
+
+  // Handle tag filter
+  $tagFilter = isset($_GET['tag']) ? $_GET['tag'] : '';
+  $tagWhere = '';
+  if ($tagFilter) {
+    $tagWhere = " AND (FIND_IN_SET('" . $conn->real_escape_string($tagFilter) . "', tag) > 0)";
+  }
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Legal Admin Dashboard</title>
+  <title>Administrative</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
@@ -465,28 +498,29 @@
             <div class="bg-white rounded-3 shadow-sm p-3 mb-3">
               <div style="font-weight:600;font-size:1.15rem;margin-bottom:1rem;">Folders</div>
               <ul class="list-group" id="folderList">
-              <?php
-              $folders = [];
-              $folderCounts = [];
-              $res = $conn->query("SELECT folder_id, COUNT(*) as cnt FROM document GROUP BY folder_id");
-              $totalCount = 0;
-              while ($f = $res->fetch_assoc()) {
-                $folders[] = $f['folder_id'];
-                $folderCounts[$f['folder_id']] = $f['cnt'];
-                $totalCount += $f['cnt'];
-              }
-              ?>
                 <li class="list-group-item folder-item active" data-folder="all">
                   <i class="bi bi-folder2-open me-2"></i> All Folders
                   <span class="badge bg-light text-dark ms-auto"><?php echo $totalCount; ?></span>
                 </li>
                 <?php foreach ($folders as $folder): ?>
-                                <li class="list-group-item folder-item" data-folder="<?php echo htmlspecialchars($folder); ?>">
-                                  <i class="bi bi-folder me-2"></i> <?php echo htmlspecialchars(ucwords($folder)); ?>
-                                  <span class="badge bg-light text-dark ms-auto"><?php echo $folderCounts[$folder]; ?></span>
-                                </li>
+                  <li class="list-group-item folder-item" data-folder="<?php echo htmlspecialchars($folder); ?>">
+                    <i class="bi bi-folder me-2"></i> <?php echo htmlspecialchars(ucwords($folderNames[$folder])); ?>
+                    <span class="badge bg-light text-dark ms-auto"><?php echo $folderCounts[$folder]; ?></span>
+                  </li>
                 <?php endforeach; ?>
               </ul>
+              <!-- Tag/Category Filter -->
+              <div class="mt-4">
+                <div style="font-weight:600;font-size:1.08rem;margin-bottom:0.5rem;">Categories/Tags</div>
+                <form method="get" id="tagFilterForm">
+                  <select class="form-select" name="tag" id="tagFilterSelect" onchange="document.getElementById('tagFilterForm').submit();">
+                    <option value="">All Categories</option>
+                    <?php foreach ($tags as $tag): ?>
+                      <option value="<?= htmlspecialchars($tag) ?>" <?= $tagFilter == $tag ? 'selected' : '' ?>><?= htmlspecialchars($tag) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </form>
+              </div>
             </div>
           </div>
           <!-- Documents Content -->
@@ -507,13 +541,12 @@
             <div class="bg-white rounded-3 shadow-sm p-3">
               <div id="gridView" class="row g-3">
                 <?php
-                $result = $conn->query("SELECT * FROM document WHERE status != 'archived' ORDER BY uploaded_at DESC");
-                $result = $conn->query("SELECT * FROM document WHERE status != 'trash' ORDER BY uploaded_at DESC");
+                $result = $conn->query("SELECT * FROM document WHERE status != 'trash' $tagWhere ORDER BY uploaded_at DESC");
                 while ($row = $result->fetch_assoc()):
                   $filePath = "uploads/" . $row['file_name'];
                   $size = file_exists($filePath) ? round(filesize($filePath) / 1024 / 1024, 2) . " MB" : "N/A";
                 ?>
-                <div class="col-md-4 doc-card" data-folder="<?php echo htmlspecialchars($row['folder_id']); ?>" data-status="<?php echo htmlspecialchars($row['status'] ?? 'active'); ?>">
+                <div class="col-md-4 doc-card" data-folder="<?php echo htmlspecialchars($row['folder_id']); ?>" data-status="<?php echo htmlspecialchars($row['status'] ?? 'active'); ?>" data-tags="<?php echo htmlspecialchars($row['tag']); ?>">
                   <div class="card h-100">
                     <div class="card-body">
                       <div class="d-flex align-items-center mb-2">
@@ -528,6 +561,13 @@
                       <div class="mb-2"><small>Size:</small> <?php echo $size; ?></div>
                       <div class="mb-2"><small>Modified:</small> <?php echo date("M d, Y", strtotime($row['uploaded_at'])); ?></div>
                       <div class="mb-2"><small>By:</small> <?php echo htmlspecialchars($row['description']); ?></div>
+                      <?php if (!empty($row['tag'])): ?>
+                        <div class="mb-2">
+                          <?php foreach (explode(',', $row['tag']) as $tag): ?>
+                            <span class="badge bg-info text-dark"><?= htmlspecialchars(trim($tag)) ?></span>
+                          <?php endforeach; ?>
+                        </div>
+                      <?php endif; ?>
                     </div>
                     <div class="card-footer d-flex justify-content-end gap-2">
                       <a href="uploads/<?php echo urlencode($row['file_name']); ?>" class="btn btn-sm btn-outline-secondary" download title="Download"><i class="bi bi-download"></i></a>
@@ -553,17 +593,18 @@
                         <th>Size</th>
                         <th>Modified</th>
                         <th>By</th>
+                        <th>Tags</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody id="documentTable">
                       <?php
-                      $result = $conn->query("SELECT * FROM document WHERE status != 'archived' ORDER BY uploaded_at DESC");
+                      $result = $conn->query("SELECT * FROM document WHERE status != 'trash' $tagWhere ORDER BY uploaded_at DESC");
                       while ($row = $result->fetch_assoc()):
                         $filePath = "uploads/" . $row['file_name'];
                         $size = file_exists($filePath) ? round(filesize($filePath) / 1024 / 1024, 2) . " MB" : "N/A";
                       ?>
-                        <tr data-folder="<?php echo htmlspecialchars($row['folder_id']); ?>" data-status="<?php echo htmlspecialchars($row['status'] ?? 'active'); ?>">
+                        <tr data-folder="<?php echo htmlspecialchars($row['folder_id']); ?>" data-status="<?php echo htmlspecialchars($row['status'] ?? 'active'); ?>" data-tags="<?php echo htmlspecialchars($row['tag']); ?>">
                           <td>
                             <span class="d-inline-flex align-items-center">
                               <span style="background:#e0e7ff;border-radius:8px;padding:6px 10px;margin-right:8px;">
@@ -579,6 +620,13 @@
                           <td><?php echo date("M d, Y", strtotime($row['uploaded_at'])); ?></td>
                           <td><?php echo htmlspecialchars($row['description']); ?></td>
                           <td>
+                            <?php if (!empty($row['tag'])): ?>
+                              <?php foreach (explode(',', $row['tag']) as $tag): ?>
+                                <span class="badge bg-info text-dark"><?= htmlspecialchars(trim($tag)) ?></span>
+                              <?php endforeach; ?>
+                            <?php endif; ?>
+                          </td>
+                          <td>
                             <a href="uploads/<?php echo urlencode($row['file_name']); ?>" class="btn btn-sm btn-outline-secondary" download title="Download"><i class="bi bi-download"></i></a>
                             <form method="POST" action="action/archive.php" style="display:inline;">
                               <input type="hidden" name="id" value="<?php echo $row['document_id']; ?>">
@@ -586,8 +634,7 @@
                             </form>
                             <form method="POST" action="action/trash.php" style="display:inline;">
                               <input type="hidden" name="id" value="<?php echo $row['document_id']; ?>">
-                              <button type="submit" class="btn btn-sm btn-outline-danger" title="
-                              "><i class="bi bi-trash"></i></button>
+                              <button type="submit" class="btn btn-sm btn-outline-danger" title="Trash"><i class="bi bi-trash"></i></button>
                             </form>
                           </td>
                         </tr>
@@ -607,12 +654,19 @@
 <!-- Upload Document Modal -->
 <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form class="modal-content" action="action/upload.php" method="POST" enctype="multipart/form-data">
+    <form class="modal-content" action="action/upload.php" method="POST" enctype="multipart/form-data" id="uploadDocumentForm">
       <div class="modal-header">
         <h5 class="modal-title" id="uploadModalLabel">Upload New Document</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+        <div class="mb-3">
+          <label for="docu_type" class="form-label">Document Type</label>
+          <select class="form-select" name="docu_type" id="docu_type" required>
+            <option value="normal">Normal Document</option>
+            <option value="legal">Legal Document</option>
+          </select>
+        </div>
         <div class="mb-3">
           <label for="title" class="form-label">Document Title</label>
           <input type="text" class="form-control" name="title" id="title" required>
@@ -625,7 +679,7 @@
           <label for="folder" class="form-label">Folder</label>
           <select class="form-select" name="folder" id="folder">
             <?php foreach ($folders as $folder): ?>
-              <option value="<?php echo htmlspecialchars($folder); ?>"><?php echo htmlspecialchars(ucwords($folder)); ?></option>
+              <option value="<?php echo htmlspecialchars($folder); ?>"><?php echo htmlspecialchars(ucwords($folderNames[$folder])); ?></option>
             <?php endforeach; ?>
           </select>
           <input type="text" class="form-control mt-2" name="new_folder" placeholder="Or create new folder">
@@ -633,6 +687,30 @@
         <div class="mb-3">
           <label for="document" class="form-label">File</label>
           <input type="file" class="form-control" name="document" id="document" required>
+        </div>
+        <!-- Legal Document Fields (hidden by default) -->
+        <div id="legalFields" style="display:none;">
+          <div class="mb-3">
+            <label for="request_type" class="form-label">Request Type</label>
+            <select class="form-select" name="request_type" id="request_type">
+              <option value="">Select type</option>
+              <option value="contract">Contract</option>
+              <option value="compliance">Compliance</option>
+              <option value="litigation">Litigation</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="legal_description" class="form-label">Legal Description</label>
+            <textarea class="form-control" name="legal_description" id="legal_description" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="stakeholders" class="form-label">Stakeholders Involved</label>
+            <input type="text" class="form-control" name="stakeholders" id="stakeholders" placeholder="Names or emails, separated by commas">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="tag" class="form-label">Tags/Categories (comma separated)</label>
+          <input type="text" class="form-control" name="tag" id="tag" placeholder="e.g. contract, finance, hr">
         </div>
       </div>
       <div class="modal-footer">
@@ -668,6 +746,15 @@
       });
       item.classList.add('active');
       const folder = item.getAttribute('data-folder');
+      // Grid view
+      document.querySelectorAll('.doc-card').forEach(function(card) {
+        if (folder === 'all' || card.getAttribute('data-folder') === folder) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      // List view
       document.querySelectorAll('#documentTable tr').forEach(function(row) {
         if (folder === 'all' || row.getAttribute('data-folder') === folder) {
           row.style.display = '';
@@ -704,6 +791,16 @@
   });
   document.getElementById('tableSearchInput').addEventListener('input', function() {
     searchDocs(this.value);
+  });
+
+  // Show/hide legal fields based on document type
+  document.getElementById('docu_type').addEventListener('change', function() {
+    document.getElementById('legalFields').style.display = this.value === 'legal' ? '' : 'none';
+  });
+
+  // Tag filter (optional: filter on the client side as well)
+  document.getElementById('tagFilterSelect')?.addEventListener('change', function() {
+    document.getElementById('tagFilterForm').submit();
   });
 </script>
 </body>

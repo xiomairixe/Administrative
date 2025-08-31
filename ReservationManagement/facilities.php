@@ -1,83 +1,51 @@
 <?php
-include('connection.php');
+include('../connection.php');
 
-//Display existing facilities
-$sql = "SELECT * FROM facilities";
-$facilities = $conn->query($sql) or die ($conn->error);
-$row = $facilities->fetch_assoc();
+// Handle search and filter
+$where = [];
+$params = [];
+$types = '';
 
-if (isset($_POST['add_facility'])) {
-    $facility_name = $_POST['facility_name'];
-    $type = $_POST['type'];
-    $status = "Available"; // Default status
-    $capacity = intval($_POST['capacity']);
-    $description = $_POST['description'];
-
-    // Handle image upload
-    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-        $image = $_FILES['image']['name'];
-        $target_dir = "uploads/";
-        $target_file = $target_dir . basename($image);
-        move_uploaded_file($_FILES['image']['tmp_name'], $target_file);
-    } else {
-        $image = null; // Handle case where no image is uploaded
-    }
-
-    $sql = "INSERT INTO facilities (facility_name, type, status, capacity, description, image)
-            VALUES ('$facility_name', '$type', '$status', $capacity, '$description', '$image')";
-
-    if (mysqli_query($conn, $sql)) {
-        header("Location: facilities.php?added=1");
-        exit();
-    } else {
-        echo "Error adding facility: " . mysqli_error($conn);
-    }
+if (!empty($_GET['search'])) {
+    $where[] = "(facility_name LIKE ? OR description LIKE ? OR location LIKE ?)";
+    $search = '%' . $_GET['search'] . '%';
+    $params[] = $search;
+    $params[] = $search;
+    $params[] = $search;
+    $types .= 'sss';
+}
+if (!empty($_GET['type'])) {
+    $where[] = "type = ?";
+    $params[] = $_GET['type'];
+    $types .= 's';
+}
+if (!empty($_GET['status'])) {
+    $where[] = "status = ?";
+    $params[] = $_GET['status'];
+    $types .= 's';
 }
 
-// if (isset($_POST['update_facility'])) {
-//     $facility_id = intval($_POST['facility_id']);
-//     $facility_name = $_POST['facility_name'];
-//     $facility_type = $_POST['facility_type'];
-//     $status = $_POST['status'];
-//     $capacity = intval($_POST['capacity']);
-//     $description = $_POST['description'];
+$sql = "SELECT * FROM facilities";
+if ($where) {
+    $sql .= " WHERE " . implode(" AND ", $where);
+}
+$sql .= " ORDER BY facility_id DESC";
 
-//     $sql = "UPDATE facilities SET 
-//             facility_name = '$facility_name',
-//             facility_type = '$facility_type',
-//             status = '$status',
-//             capacity = $capacity,
-//             description = '$description'
-//             WHERE facilityID = $facility_id";
-
-//     if (mysqli_query($conn, $sql)) {
-//         header("Location: facilities.php?updated=1");
-//         exit();
-//     } else {
-//         echo "Error updating facility: " . mysqli_error($conn);
-//     }
-// }
-
-// if (isset($_GET['delete_id'])) {
-//     $facility_id = intval($_GET['delete_id']);
-//     $sql = "DELETE FROM facilities WHERE facilityID = $facility_id";
-
-//     if (mysqli_query($conn, $sql)) {
-//         header("Location: facilities.php?deleted=1");
-//         exit();
-//     } else {
-//         echo "Error deleting facility: " . mysqli_error($conn);
-//     }
-// }
+$stmt = $conn->prepare($sql);
+if ($params) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$facilities = $stmt->get_result();
+$row = $facilities->fetch_assoc();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ViaHale Dashboard</title>
+  <title>Facilities Reservation</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -96,9 +64,9 @@ if (isset($_POST['add_facility'])) {
     <a href="bookings.php"><i class="bi bi-calendar-check"></i> Bookings</a>
     <a href="reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
     <hr>
-    <a href="account.php"><i class="bi bi-person"></i> Account</a>
-    <a href="setting.php"><i class="bi bi-gear"></i> Settings</a>
-    <a href="help.php"><i class="bi bi-question-circle"></i> Help</a>
+    <a href="submenu/account.php"><i class="bi bi-person"></i> Account</a>
+    <a href="submenu/setting.php"><i class="bi bi-gear"></i> Settings</a>
+    <a href="submenu/help.php"><i class="bi bi-question-circle"></i> Help</a>
     <a href="#"><i class="bi bi-box-arrow-right"></i> Log Out</a>
   </div> 
 
@@ -127,34 +95,37 @@ if (isset($_POST['add_facility'])) {
         <!-- Header and Add Button -->
         <div class="d-flex justify-content-between align-items-center mb-3">
           <!-- Filters -->
-          <div class="row mb-4 g-2">
-          <div class="col-md-4">
-            <input type="text" class="form-control" id="searchInput" placeholder="Search facilities...">
-          </div>
-          <div class="col-md-3">
-            <select class="form-select" id="typeFilter">
-              <option value="">All Types</option>
-              <option value="Office Building">Office Building</option>
-              <option value="Laboratory">Laboratory</option>
-              <option value="Warehouse">Warehouse</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <select class="form-select" id="statusFilter">
-              <option value="">All Statuses</option>
-              <option value="Operational">Operational</option>
-              <option value="Maintenance Scheduled">Maintenance Scheduled</option>
-            </select>
-          </div>
-        </div>
-            <button class="btn" style="background: #ab83fcff;" data-bs-toggle="modal" data-bs-target="#addFacilityModal">
-              <ion-icon name="add-circle-outline" class="me-1"></ion-icon> Add New Facility
-            </button>
+          <form class="row mb-4 g-2" method="get" id="filterForm">
+            <div class="col-md-4">
+              <input type="text" class="form-control" id="searchInput" name="search" placeholder="Search facilities..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="typeFilter" name="type">
+                <option value="">All Types</option>
+                <option <?= (($_GET['type'] ?? '') == 'Office Building') ? 'selected' : '' ?>>Office Building</option>
+                <option <?= (($_GET['type'] ?? '') == 'Laboratory') ? 'selected' : '' ?>>Laboratory</option>
+                <option <?= (($_GET['type'] ?? '') == 'Warehouse') ? 'selected' : '' ?>>Warehouse</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select class="form-select" id="statusFilter" name="status">
+                <option value="">All Statuses</option>
+                <option <?= (($_GET['status'] ?? '') == 'Operational') ? 'selected' : '' ?>>Operational</option>
+                <option <?= (($_GET['status'] ?? '') == 'Maintenance Scheduled') ? 'selected' : '' ?>>Maintenance Scheduled</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+          </form>
+          <button class="btn" style="background: #ab83fcff;" data-bs-toggle="modal" data-bs-target="#addFacilityModal">
+            <ion-icon name="add-circle-outline" class="me-1"></ion-icon> Add New Facility
+          </button>
         </div>
 
     <!-- Facilities -->
     <div class="row g-4">
-    <?php do { ?> 
+    <?php if ($row) { do { ?> 
     <div class="col-md-4">
         <div class="facility-card">
           <img src="uploads/<?php echo $row['image'];?>" class="facility-image" alt="<?php echo $row['facility_name']; ?>">
@@ -172,6 +143,7 @@ if (isset($_POST['add_facility'])) {
                     data-name="<?php echo htmlspecialchars($row['facility_name'], ENT_QUOTES); ?>"
                     data-location="<?php echo htmlspecialchars($row['location'], ENT_QUOTES); ?>"
                     data-type="<?php echo htmlspecialchars($row['type'], ENT_QUOTES); ?>"
+                    data-status="<?php echo htmlspecialchars($row['status'], ENT_QUOTES); ?>"
                     data-capacity="<?php echo $row['capacity']; ?>"
                     data-image="<?php echo $row['image']; ?>">
                     View Details
@@ -187,13 +159,15 @@ if (isset($_POST['add_facility'])) {
                   data-bs-target="#manageModal"
                   data-id="<?php echo $row['facility_id']; ?>"
                   data-name="<?php echo $row['facility_name']; ?>">
-                  Manage
+                  Manage Slots
                 </button>
               </div>
           </div>
         </div>
       </div>
-    <?php } while ($row = $facilities->fetch_assoc()); ?>
+    <?php } while ($row = $facilities->fetch_assoc()); } else { ?>
+      <div class="col-12 text-center text-muted">No facilities found.</div>
+    <?php } ?>
     </div>
   </div>  
 
@@ -279,29 +253,29 @@ if (isset($_POST['add_facility'])) {
           
           <!-- Dark header -->
           <div class="modal-header bg-dark text-white">
-            <h5 class="modal-title" id="manageModalLabel">🛎 Manage Facility</h5>
+            <h5 class="modal-title" id="manageModalLabel">Manage Facility Slots</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
 
           <div class="modal-body">
             <h6 class="fw-bold">Available Slots</h6>
             
-            <ul class="list-group mb-4" id="slotList">
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                9:00 AM - 11:00 AM
-                <span class="badge bg-success rounded-pill">Available</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                1:00 PM - 3:00 PM
-                <span class="badge bg-danger rounded-pill">Booked</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                4:00 PM - 6:00 PM
-                <span class="badge bg-warning text-dark rounded-pill">Pending</span>
-              </li>
-            </ul>
-
-            <button class="btn btn-primary btn-sm mb-3" id="addSlotBtn">➕ Add New Slot</button>
+            <ul class="list-group mb-4" id="slotList"></ul>
+            <form id="addSlotForm" class="row g-2 mb-3">
+              <input type="hidden" name="facility_id" id="manageFacilityId">
+              <div class="col-md-3">
+                <input type="text" name="slot_name" class="form-control" placeholder="Slot Name" required>
+              </div>
+              <div class="col-md-3">
+                <input type="time" name="slot_start" class="form-control" required>
+              </div>
+              <div class="col-md-3">
+                <input type="time" name="slot_end" class="form-control" required>
+              </div>
+              <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">Add Slot</button>
+              </div>
+            </form>
 
             <hr>
 
@@ -345,6 +319,12 @@ if (isset($_POST['add_facility'])) {
                 <p><strong>Type:</strong> <span id="modalType"></span></p>
                 <p><strong>Status:</strong> <span id="modalStatus" class="badge bg-success"></span></p>
                 <p><strong>Capacity:</strong> <span id="modalSize"></span></p>
+                <!-- Slot Section -->
+                <hr>
+                <h6 class="fw-bold">Facility Slots</h6>
+                <ul class="list-group mb-2" id="detailSlotList">
+                  <li class="list-group-item">Loading slots...</li>
+                </ul>
               </div>
 
               <!-- Edit Mode -->
@@ -384,6 +364,14 @@ if (isset($_POST['add_facility'])) {
                     <label for="editImage" class="form-label">Image (optional)</label>
                     <input type="file" class="form-control" name="image" id="editImage" accept="image/*">
                   </div>
+
+                  <!-- Facility Slots Edit Section -->
+                  <div class="mb-3">
+                    <label class="form-label">Facility Slots</label>
+                    <ul class="list-group" id="editSlotList">
+                      <li class="list-group-item">Loading slots...</li>
+                    </ul>
+                  </div>
                 </form>
               </div>
             </div>
@@ -415,186 +403,152 @@ if (isset($_POST['add_facility'])) {
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
-     document.querySelectorAll('.open-manage-btn').forEach(button => {
-    button.addEventListener('click', function () {
-      const name = this.getAttribute('data-name');
-      const type = this.getAttribute('data-type');
-      const status = this.getAttribute('data-status');
-
-      document.getElementById('modalFacilityName').textContent = name;
-      document.getElementById('modalFacilityType').textContent = type;
-      document.getElementById('modalFacilityStatus').textContent = status;
-    });
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"'\/]/g, function (s) {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#47;'})[s];
   });
-
-  document.querySelectorAll('[data-bs-target="#facilityModal"]').forEach(btn => {
-    btn.addEventListener('click', function () {
-      const card = this.closest('.facility-card');
-      const imgSrc = card.querySelector('img').src;
-      const title = card.querySelector('h5').textContent;
-      const address = card.querySelector('p:nth-of-type(1)').textContent;
-      const type = card.querySelector('.type-label').textContent.replace("Type: ", "");
-      const status = card.querySelector('.status-badge').textContent;
-      const sizeEmployees = card.querySelectorAll('p')[3].textContent.split('|');
-
-      document.getElementById('modalImage').src = imgSrc;
-      document.getElementById('modalTitle').textContent = title;
-      document.getElementById('modalAddress').textContent = address;
-      document.getElementById('modalType').textContent = type;
-      document.getElementById('modalStatus').textContent = status;
-      document.getElementById('modalSize').textContent = sizeEmployees[0].trim();
-      document.getElementById('modalEmployees').textContent = sizeEmployees[1].trim();
-    });
-  });
-
-  function addSlot() {
-    const slotGroup = document.createElement('div');
-    slotGroup.classList.add('slot-group', 'mb-2');
-    slotGroup.innerHTML = `
-        <input type="text" name="slot_name[]" class="form-control mb-1" placeholder="Slot Name" required>
-        <input type="time" name="slot_start[]" class="form-control mb-1" placeholder="Start Time" required>
-        <input type="time" name="slot_end[]" class="form-control mb-1" placeholder="End Time" required>
-    `;
-    document.getElementById('slotContainer').appendChild(slotGroup);
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-  const manageModal = new bootstrap.Modal(document.getElementById('manageModal'));
-  
-  document.querySelectorAll('.open-manage-btn').forEach(button => {
-    button.addEventListener('click', () => {
-      const facility_id = button.getAttribute('data-id');
-      const slotList = document.getElementById('slotList');
-      slotList.innerHTML = '<li class="list-group-item">Loading slots...</li>';
-
-      fetch(`get_slots.php?facility_ID=${facility_id}`)
-        .then(response => response.json())
-        .then(data => {
-          slotList.innerHTML = '';
-          data.forEach(slot => {
-            const badgeClass = slot.availability === 'Available' ? 'bg-success'
-                              : slot.availability === 'Booked' ? 'bg-danger'
-                              : 'bg-secondary';
-
-            const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center';
-            li.innerHTML = `${slot.slot_start} - ${slot.slot_end}
-              <span class="badge ${badgeClass} rounded-pill">${slot.availability}</span>`;
-            slotList.appendChild(li);
-          });
+// Fix slot display for Manage Modal and Facility Details Modal
+function loadSlots(facility_id) {
+  const slotList = document.getElementById('slotList');
+  slotList.innerHTML = '<li class="list-group-item">Loading slots...</li>';
+  fetch(`services/get_slots.php?facility_ID=${facility_id}`)
+    .then(response => response.json())
+    .then(data => {
+      slotList.innerHTML = '';
+      if (data.length === 0) {
+        slotList.innerHTML = "<li class='list-group-item'>No slots available.</li>";
+      } else {
+        data.forEach(slot => {
+          let badgeClass = slot.is_available == 1 ? "bg-success" : "bg-danger";
+          let badgeText = slot.is_available == 1 ? "Available" : "Booked";
+          slotList.innerHTML += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>
+                <strong>${escapeHtml(slot.slot_name)}</strong> &nbsp; ${escapeHtml(slot.slot_start)} - ${escapeHtml(slot.slot_end)}
+              </span>
+              <span>
+                <span class="badge ${badgeClass} rounded-pill">${badgeText}</span>
+                <button class="btn btn-sm btn-outline-danger ms-2 delete-slot-btn" data-id="${slot.slot_id}"><i class="bi bi-trash"></i></button>
+              </span>
+            </li>
+          `;
         });
+        // Attach delete event
+        document.querySelectorAll('.delete-slot-btn').forEach(btn => {
+          btn.onclick = function() {
+            if (confirm("Delete this slot?")) {
+              fetch('services/delete_slot.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'slot_id=' + encodeURIComponent(this.getAttribute('data-id'))
+              })
+              .then(res => res.text())
+              .then(result => {
+                if (result.trim() === "success") {
+                  loadSlots(facility_id);
+                } else {
+                  alert("Failed to delete slot.");
+                }
+              });
+            }
+          };
+        });
+      }
     });
-  });
-});
+}
 
-document.addEventListener("DOMContentLoaded", function () {
-  const manageModal = document.getElementById("manageModal");
-
-  manageModal.addEventListener("show.bs.modal", function (event) {
-    const button = event.relatedTarget;
-    const facility_id = button.getAttribute("data-id");
-    const slotList = document.getElementById("slotList");
-
-    // Clear old slots
-    slotList.innerHTML = "<li class='list-group-item'>Loading slots...</li>";
-
-    fetch(`get_slots.php?facility_ID=${facility_id}`)
-      .then((response) => response.json())
-      .then((data) => {
-        slotList.innerHTML = ""; // Clear previous
-
-        if (data.length === 0) {
-          slotList.innerHTML = "<li class='list-group-item'>No slots available.</li>";
-        } else {
-          data.forEach((slot) => {
-            let badgeClass = "bg-success";
-            if (slot.availability === "Booked") badgeClass = "bg-danger";
-
-            const listItem = `
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                ${slot.slot_start} - ${slot.slot_end}
-                <span class="badge ${badgeClass} rounded-pill">${slot.availability}</span>
-              </li>
-            `;
-            slotList.innerHTML += listItem;
-          });
-        }
-      })
-      .catch((error) => {
-        slotList.innerHTML = "<li class='list-group-item text-danger'>Error loading slots</li>";
-        console.error("Error fetching slots:", error);
-      });
-  });
-});
-
-//EDIT FACILITY
-document.addEventListener("DOMContentLoaded", () => {
-  const modal = document.getElementById("facilityModal");
-
-  const modalImage = document.getElementById("modalImage");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalAddress = document.getElementById("modalAddress");
-  const modalType = document.getElementById("modalType");
-  const modalStatus = document.getElementById("modalStatus");
-  const modalSize = document.getElementById("modalSize");
-
-  const viewMode = document.getElementById("viewMode");
-  const editMode = document.getElementById("editMode");
-  const viewButtons = document.getElementById("viewButtons");
-  const editButtons = document.getElementById("editButtons");
-
-  const editForm = document.getElementById("editFacilityForm");
-
-  // Open modal and populate fields
+// Facility Details Modal: Load slots
 document.querySelectorAll(".view-details-btn").forEach(button => {
   button.addEventListener("click", () => {
     const facility_id = button.getAttribute("data-id");
     const name = button.getAttribute("data-name");
     const location = button.getAttribute("data-location");
     const type = button.getAttribute("data-type");
-    const status = button.getAttribute("data-status");
+    const status = button.getAttribute("data-status") || "Operational";
     const capacity = button.getAttribute("data-capacity");
     const image = button.getAttribute("data-image");
 
-    modalImage.src = "uploads/" + image; 
-    modalTitle.textContent = name;
-    modalAddress.textContent = location;
-    modalType.textContent = type;
-    modalStatus.textContent = status;
-    modalSize.textContent = capacity;
+    document.getElementById("modalImage").src = "uploads/" + image;
+    document.getElementById("modalTitle").textContent = name;
+    document.getElementById("modalAddress").textContent = location;
+    document.getElementById("modalType").textContent = type;
+    document.getElementById("modalStatus").textContent = status;
+    document.getElementById("modalSize").textContent = capacity;
 
-    editForm.facility_id.value = facility_id;
-    editForm.facility_name.value = name;
-    editForm.location.value = location;
-    editForm.type.value = type;
-    editForm.status.value = status;
-    editForm.capacity.value = capacity;
-
-    toggleEdit(false);
+    // Load slots for this facility
+    const detailSlotList = document.getElementById('detailSlotList');
+    detailSlotList.innerHTML = '<li class="list-group-item">Loading slots...</li>';
+    fetch(`services/get_slots.php?facility_ID=${encodeURIComponent(facility_id)}`)
+      .then(res => res.json())
+      .then(data => {
+        detailSlotList.innerHTML = '';
+        if (!data || data.length === 0) {
+          detailSlotList.innerHTML = '<li class="list-group-item">No slots available.</li>';
+        } else {
+          data.forEach(slot => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            const timeText = (slot.slot_start && slot.slot_end) ? `${slot.slot_start} - ${slot.slot_end}` : '';
+            const availabilityClass = slot.is_available == 1 ? 'bg-success' : 'bg-danger';
+            const availabilityText = slot.is_available == 1 ? 'Available' : 'Booked';
+            li.innerHTML = `<div><strong>${escapeHtml(slot.slot_name || '')}</strong><div class="small text-muted">${escapeHtml(timeText)}</div></div>
+                            <span class="badge ${availabilityClass} rounded-pill">${availabilityText}</span>`;
+            detailSlotList.appendChild(li);
+          });
+        }
+      })
+      .catch(err => {
+        detailSlotList.innerHTML = '<li class="list-group-item text-danger">Error loading slots</li>';
+      });
   });
 });
 
-  // Edit button
+// Open Manage Modal and load slots
+document.querySelectorAll('.open-manage-btn').forEach(button => {
+  button.addEventListener('click', function () {
+    const facility_id = this.getAttribute('data-id');
+    document.getElementById('manageFacilityId').value = facility_id;
+    loadSlots(facility_id);
+  });
+});
+
+// Add Slot Form
+document.getElementById('addSlotForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  fetch('services/add_slot.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.text())
+  .then(result => {
+    if (result.trim() === "success") {
+      loadSlots(document.getElementById('manageFacilityId').value);
+      this.reset();
+    } else {
+      alert("Failed to add slot.");
+    }
+  });
+});
+
+// Edit Facility Modal
+document.addEventListener("DOMContentLoaded", () => {
+  const editForm = document.getElementById("editFacilityForm");
   document.getElementById("editBtn").addEventListener("click", () => toggleEdit(true));
-
-  // Cancel button
   document.getElementById("cancelEditBtn").addEventListener("click", () => toggleEdit(false));
-
-  // Toggle view/edit modes
   function toggleEdit(isEdit) {
-    viewMode.classList.toggle("d-none", isEdit);
-    viewButtons.classList.toggle("d-none", isEdit);
-    editMode.classList.toggle("d-none", !isEdit);
-    editButtons.classList.toggle("d-none", !isEdit);
+    document.getElementById("viewMode").classList.toggle("d-none", isEdit);
+    document.getElementById("viewButtons").classList.toggle("d-none", isEdit);
+    document.getElementById("editMode").classList.toggle("d-none", !isEdit);
+    document.getElementById("editButtons").classList.toggle("d-none", !isEdit);
   }
-
-  // Save Changes via AJAX
   editForm.addEventListener("submit", function (e) {
     e.preventDefault();
-
     const formData = new FormData(editForm);
-
-    fetch("update_facility.php", {
+    fetch("services/update_facility.php", {
       method: "POST",
       body: formData
     })
@@ -602,50 +556,89 @@ document.querySelectorAll(".view-details-btn").forEach(button => {
     .then(result => {
       if (result.trim() === "success") {
         alert("Facility updated successfully!");
-        location.reload(); // Refresh to reflect changes
+        location.reload();
       } else {
         alert("Update failed: " + result);
       }
     })
     .catch(err => {
-      console.error("Error:", err);
       alert("Something went wrong.");
     });
   });
 });
 
-//DELETE FACILITY
-document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll(".remove-btn").forEach(button => {
-    button.addEventListener("click", function () {
-      const facility_id = this.getAttribute("data-id");
-
-      if (confirm("Are you sure you want to remove this facility?")) {
-        fetch('delete_facility.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: 'facility_id=' + encodeURIComponent(facility_id)
-        })
-        .then(response => response.text())
-        .then(data => {
-          if (data.trim() === "success") {
-            alert("Facility removed successfully.");
-            location.reload();
-          } else {
-            alert("Facility removed successfully.");
-            location.reload();
-          }
-        })
-        .catch(error => {
-          console.error("Error:", error);
-          alert("Something went wrong.");
-        });
-      }
-    });
+// Delete Facility
+document.querySelectorAll(".remove-btn").forEach(button => {
+  button.addEventListener("click", function () {
+    const facility_id = this.getAttribute("data-id");
+    if (confirm("Are you sure you want to remove this facility?")) {
+      fetch('services/delete_facility.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'facility_id=' + encodeURIComponent(facility_id)
+      })
+      .then(response => response.text())
+      .then(data => {
+        if (data.trim() === "success") {
+          alert("Facility removed successfully.");
+          location.reload();
+        } else {
+          alert("Facility removed successfully.");
+          location.reload();
+        }
+      })
+      .catch(error => {
+        alert("Something went wrong.");
+      });
+    }
   });
+});
+
+// Filter triggers
+document.getElementById('typeFilter').addEventListener('change', function() {
+  document.getElementById('filterForm').submit();
+});
+document.getElementById('statusFilter').addEventListener('change', function() {
+  document.getElementById('filterForm').submit();
 });
   </script>
 </body>
 </html>
+
+<?php
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_facility'])) {
+    $facility_name = $_POST['facility_name'];
+    $location = $_POST['location'];
+    $capacity = $_POST['capacity'];
+    $type = $_POST['type'];
+    $description = $_POST['description'];
+    // Handle image upload
+    $image = '';
+    if (!empty($_FILES['image']['name'])) {
+        $target = "uploads/" . basename($_FILES['image']['name']);
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
+            $image = $_FILES['image']['name'];
+        }
+    }
+    // Insert facility
+    $stmt = $conn->prepare("INSERT INTO facilities (facility_name, location, capacity, type, description, image, status) VALUES (?, ?, ?, ?, ?, ?, 'Operational')");
+    $stmt->bind_param("ssisss", $facility_name, $location, $capacity, $type, $description, $image);
+    $stmt->execute();
+    $facility_id = $stmt->insert_id;
+    $stmt->close();
+
+    // Insert slots
+    if (!empty($_POST['slot_name'])) {
+        foreach ($_POST['slot_name'] as $i => $slot_name) {
+            $slot_start = $_POST['slot_start'][$i];
+            $slot_end = $_POST['slot_end'][$i];
+            $stmt2 = $conn->prepare("INSERT INTO facility_slots (facility_id, slot_name, slot_start, slot_end, is_available) VALUES (?, ?, ?, ?, 1)");
+            $stmt2->bind_param("isss", $facility_id, $slot_name, $slot_start, $slot_end);
+            $stmt2->execute();
+            $stmt2->close();
+        }
+    }
+    header("Location: facilities.php");
+    exit;
+}
+?>

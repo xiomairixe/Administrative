@@ -75,7 +75,7 @@ if (isset($_POST['add_facility'])) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Legal Admin Dashboard</title>
+  <title>Administrative</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>

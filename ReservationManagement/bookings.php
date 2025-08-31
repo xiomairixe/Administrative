@@ -1,5 +1,5 @@
 <?php
- include ('connection.php');
+ include ('../connection.php');
   $sql = "SELECT * FROM reservation_requests";
   $facility = $conn->query($sql) or die ($conn->error);
   $row = $facility->fetch_assoc();
@@ -16,7 +16,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ViaHale Dashboard</title>
+  <title>Facilities Reservation</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -34,33 +34,27 @@
     <a href="#" class="active"><i class="bi bi-calendar-check"></i> Bookings</a>
     <a href="reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
     <hr>
-    <a href="account.php"><i class="bi bi-person"></i> Account</a>
-    <a href="setting.php"><i class="bi bi-gear"></i> Settings</a>
-    <a href="help.php"><i class="bi bi-question-circle"></i> Help</a>
+    <a href="submenu/account.php"><i class="bi bi-person"></i> Account</a>
+    <a href="submenu/setting.php"><i class="bi bi-gear"></i> Settings</a>
+    <a href="submenu/help.php"><i class="bi bi-question-circle"></i> Help</a>
     <a href="#"><i class="bi bi-box-arrow-right"></i> Log Out</a>
   </div>
 
   <!-- Main Content -->
     <main class="col-md-10 main-content">
-      <div class="topbar mb-4">
-        <div class="d-flex align-items-center gap-3">
-          <button class="sidebar-toggle d-lg-none" id="sidebarToggle2" aria-label="Toggle sidebar">
-            <i class="bi bi-list"></i>
-          </button>
-          <nav class="nav">
-            <a class="nav-link" href="#">Home</a>
-            <a class="nav-link" href="#">Contact</a>
-          </nav>
+      <div class="topbar">
+        <div>
+          <div class="dashboard-title">Bookings</div>
+          <div class="breadcrumbs">Home / Bookings</div>
         </div>
-
         <div class="profile">
           <div style="position:relative;">
-            <i class="bi bi-bell"></i>
+            <i class="bi bi-envelope"></i>
             <span class="badge">2</span>
           </div>
           <img src="#" class="profile-img" alt="profile">
           <div class="profile-info">
-            <strong>R. Lance</strong><br>
+            <strong>Steven</strong><br>
             <small>Admin</small>
           </div>
         </div>
@@ -128,8 +122,8 @@
                 </button>
                     
                 <?php if ($status === 'Pending') : ?>
-                <a href="action/update_status.php?request_id=<?php echo $row['request_id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
-                <a href="action/update_status.php?request_id=<?php echo $row['request_id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
+                <a href="action/approved.php?request_id=<?php echo $row['request_id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
+                <a href="action/rejected.php?request_id=<?php echo $row['request_id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
                 <?php endif; ?>
               </div>
             </div>
@@ -157,10 +151,33 @@
                       <dd class="col-sm-8"><?php echo $row['status']; ?></dd>
 
                       <dt class="col-sm-4">Requested By:</dt>
-                      <dd class="col-sm-8"><?php echo $row['requested_by'] ?? 'N/A'; ?></dd>
+                      <dd class="col-sm-8">
+                        <?php
+                          $req_id = $row['request_id'];
+                          $head = $conn->query("SELECT full_name FROM visitors WHERE reservation_id = $req_id AND is_head = 1 LIMIT 1");
+                          if ($head && $head->num_rows > 0) {
+                            $head_row = $head->fetch_assoc();
+                            echo htmlspecialchars($head_row['full_name']);
+                          } else {
+                            echo 'N/A';
+                          }
+                        ?>
+                      </dd>
+
+                      <dt class="col-sm-4">Other Visitor:</dt>
+                      <dd class="col-sm-8">
+                        <?php
+                          $others = $conn->query("SELECT full_name FROM visitors WHERE reservation_id = $req_id AND is_head = 0");
+                          $other_names = [];
+                          while ($other_row = $others->fetch_assoc()) {
+                            $other_names[] = htmlspecialchars($other_row['full_name']);
+                          }
+                          echo $other_names ? implode(', ', $other_names) : 'N/A';
+                        ?>
+                      </dd>
 
                       <dt class="col-sm-4">Date Requested:</dt>
-                      <dd class="col-sm-8"><?php echo $row['date_requested'] ?? 'N/A'; ?></dd>
+                      <dd class="col-sm-8"><?php echo $row['requested_at'] ?? 'N/A'; ?></dd>
                     </dl>
                   </div>
                 </div>
@@ -185,7 +202,7 @@
                   </div>
                 </div>
                 <div class="mt-2">
-                  <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['reservation_id']; ?>">
+                  <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['request_id']; ?>">
                     View Details
                   </button>
                     
@@ -218,7 +235,18 @@
                       <dd class="col-sm-8"><?php echo $row['status']; ?></dd>
 
                       <dt class="col-sm-4">Requested By:</dt>
-                      <dd class="col-sm-8"><?php echo $row['requested_by'] ?? 'N/A'; ?></dd>
+                      <dd class="col-sm-8">
+                        <?php
+                          $req_id = $row['request_id'];
+                          $head = $conn->query("SELECT full_name FROM visitors WHERE reservation_id = $req_id AND is_head = 1 LIMIT 1");
+                          if ($head && $head->num_rows > 0) {
+                            $head_row = $head->fetch_assoc();
+                            echo htmlspecialchars($head_row['full_name']);
+                          } else {
+                            echo 'N/A';
+                          }
+                        ?>
+                      </dd>
 
                       <dt class="col-sm-4">Date Requested:</dt>
                       <dd class="col-sm-8"><?php echo $row['date_requested'] ?? 'N/A'; ?></dd>

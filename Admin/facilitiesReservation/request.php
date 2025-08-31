@@ -1,20 +1,18 @@
 <?php
- include ('connection.php');
-  $sql = "SELECT * FROM reservation_requests";
-  $facility = $conn->query($sql) or die ($conn->error);
-  $row = $facility->fetch_assoc();
+include ('connection.php');
 
-  $request = $conn->query("SELECT * FROM reservation_requests ORDER BY request_id DESC");
-  $pending = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Pending' ORDER BY request_id DESC");
-  $approved = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Approved' ORDER BY request_id DESC");
-  $rejected = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Rejected' ORDER BY request_id DESC");
+// Queries for tabs
+$request = $conn->query("SELECT * FROM reservation_requests ORDER BY request_id DESC");
+$pending = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Pending' ORDER BY request_id DESC");
+$approved = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Approved' ORDER BY request_id DESC");
+$rejected = $conn->query("SELECT * FROM reservation_requests WHERE status = 'Rejected' ORDER BY request_id DESC");
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Legal Admin Dashboard</title>
+  <title>Administrative</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
@@ -512,72 +510,127 @@
           <!-- All Tab -->
             <div class="tab-pane fade show active" id="all-tab" role="tabpanel">
               <?php while ($row = $request->fetch_assoc()): ?>
-                <?php
-                  $status = $row['status'];
-                  $badgeClass = 'bg-secondary';
-                  if ($status === 'Pending') {
-                    $badgeClass = 'bg-warning text-dark';
-                  } elseif ($status === 'Approved') {
-                    $badgeClass = 'bg-success';
-                  } elseif ($status === 'Rejected') {
-                    $badgeClass = 'bg-danger';
-                  }
-                ?>
-                <div class="reservation-card">
+                <div class="reservation-card mb-3 p-3 bg-white rounded shadow-sm">
                   <div class="d-flex justify-content-between">
                     <div>
-                      <h5><?php echo $row['facility_name']; ?></h5>
-                      <p class="mb-1"><?php echo $row['slot']; ?></p>
-                      <p class="mb-1"><?php echo $row['purpose']; ?></p>
+                      <h5><?php echo htmlspecialchars($row['facility_name']); ?></h5>
+                      <p class="mb-1"><strong>Slot:</strong> <?php echo htmlspecialchars($row['slot']); ?></p>
+                      <p class="mb-1"><strong>Purpose:</strong> <?php echo htmlspecialchars($row['purpose']); ?></p>
                     </div>
                     <div class="text-end">
-                      <span class="badge <?php echo $badgeClass; ?> status-badge"><?php echo $status; ?></span><br>
-                      <small>Jenna - IT</small>
+                      <span class="badge <?php echo $badgeClass; ?> status-badge"><?php echo htmlspecialchars($status); ?></span><br>
+                      <small><?php echo htmlspecialchars($row['full_name'] ?? 'N/A'); ?> - <?php echo htmlspecialchars($row['department'] ?? 'N/A'); ?></small>
                     </div>
                   </div>
                   <div class="mt-2">
-                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewDetailsModal<?php echo $row['request_id']; ?>">
+                    <button class="btn btn-outline-secondary btn-sm"
+                      data-bs-toggle="modal"
+                      data-bs-target="#viewDetailsModal<?php echo $row['request_id']; ?>">
                       View Details
                     </button>
-                    
-                    <?php if ($status === 'Pending') : ?>
-                      <a href="action/approved.php?request_id=<?php echo $row['request_id']; ?>&status=Approved" class="btn btn-success btn-sm">Approve</a>
-                      <a href="action/rejected.php?request_id=<?php echo $row['request_id']; ?>&status=Rejected" class="btn btn-danger btn-sm">Reject</a>
-                      <?php endif; ?>
                   </div>
                 </div>
-                <!-- Modal -->
-                    <div class="modal fade" id="viewDetailsModal<?php echo $row['request_id']; ?>" tabindex="-1" aria-labelledby="viewDetailsLabel<?php echo $row['id']; ?>" aria-hidden="true">
-                      <div class="modal-dialog modal-dialog-centered modal-lg">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title" id="viewDetailsLabel<?php echo $row['request_id']; ?>">Reservation Details</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                          </div>
-                          <div class="modal-body">
-                            <dl class="row">
-                              <dt class="col-sm-4">Facility Name:</dt>
-                              <dd class="col-sm-8"><?php echo $row['facility_name']; ?></dd>
 
-                              <dt class="col-sm-4">Slot:</dt>
-                              <dd class="col-sm-8"><?php echo $row['slot']; ?></dd>
+                <!-- Modal for this reservation -->
+                <div class="modal fade" id="viewDetailsModal<?php echo $row['request_id']; ?>" tabindex="-1"
+                  aria-labelledby="viewDetailsLabel<?php echo $row['request_id']; ?>" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="viewDetailsLabel<?php echo $row['request_id']; ?>">Reservation Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <!-- Display all fields here -->
+                        <dl class="row">
+                          <dt class="col-sm-4">Facility Name:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['facility_name']); ?></dd>
 
-                              <dt class="col-sm-4">Purpose:</dt>
-                              <dd class="col-sm-8"><?php echo $row['purpose']; ?></dd>
+                          <dt class="col-sm-4">Slot:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['slot']); ?></dd>
 
-                              <dt class="col-sm-4">Status:</dt>
-                              <dd class="col-sm-8"><?php echo $row['status']; ?></dd>
+                          <dt class="col-sm-4">Date of Reservation:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['reservation_date'] ?? ''); ?></dd>
 
-                              <dt class="col-sm-4">Requested By:</dt>
-                              <dd class="col-sm-8"><?php echo $row['requested_by'] ?? 'N/A'; ?></dd>
+                          <dt class="col-sm-4">Start Time:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['start_time'] ?? ''); ?></dd>
 
-                              <dt class="col-sm-4">Date Requested:</dt>
-                              <dd class="col-sm-8"><?php echo $row['date_requested'] ?? 'N/A'; ?></dd>
-                            </dl>
-                          </div>
-                        </div>
+                          <dt class="col-sm-4">End Time:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['end_time'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Duration:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['duration'] ?? ''); ?> hours</dd>
+
+                          <dt class="col-sm-4">Recurrence:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['recurrence'] ?? 'One-time'); ?></dd>
+
+                          <dt class="col-sm-4">Purpose:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['purpose']); ?></dd>
+
+                          <dt class="col-sm-4">Number of Attendees:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['number_of_user']); ?></dd>
+
+                          <dt class="col-sm-4">Equipment Needed:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['equipment_needed'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Room Setup Preference:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['room_setup'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Catering / Refreshments:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['catering'] ?? ''); ?> <?php echo htmlspecialchars($row['catering_details'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Special Requests / Notes:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['special_requests'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Requestor Name:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['full_name'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Department / Team:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['department'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Contact Number:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['contact_number'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Email Address:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['email'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Employee ID:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['employee_id'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Approver Name / Role:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['approver'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Approval Status:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['approval_status'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Reservation Status:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['reservation_status'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Terms & Conditions Acknowledged:</dt>
+                          <dd class="col-sm-8"><?php echo !empty($row['terms_ack']) ? 'Yes' : 'No'; ?></dd>
+
+                          <dt class="col-sm-4">Digital Signature:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['digital_signature'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Access Level Required:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['access_level'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Visitor Access Request:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['visitor_access'] ?? ''); ?> <?php echo htmlspecialchars($row['visitor_access_details'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Security Escort Needed:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['security_escort'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Reservation Code:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['code'] ?? ''); ?></dd>
+
+                          <dt class="col-sm-4">Requested At:</dt>
+                          <dd class="col-sm-8"><?php echo htmlspecialchars($row['requested_at'] ?? ''); ?></dd>
+                        </dl>
                       </div>
                     </div>
+                  </div>
+                </div>
               <?php endwhile; ?>
             </div>
             <!-- Pending Tab -->
@@ -705,5 +758,6 @@
     }
   });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
