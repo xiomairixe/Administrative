@@ -1,0 +1,134 @@
+.stats-cards {
+      display: flex;
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .stats-card {
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      padding: 1.2rem 1.5rem;
+      min-width: 170px;
+      flex: 1 1 170px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: box-shadow 0.2s;
+    }
+
+    .stats-card:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .stats-card .icon {
+      font-size: 2rem;
+      color: #6366f1;
+      background: #f3f4f6;
+      border-radius: 50%;
+      padding: 0.5rem;
+      margin-right: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+    }
+
+    .stats-card .label {
+      font-size: 0.98rem;
+      color: #6c757d;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+    }
+
+    .stats-card .value {
+      font-size: 1.5rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      color: #22223b;
+      margin-left: auto;
+    }
+
+    .dashboard-row {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .dashboard-col {
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      padding: 1.2rem 1.5rem;
+      flex: 1 1 350px;
+      min-width: 320px;
+      margin-bottom: 1rem;
+    }
+
+    .chart-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.08rem;
+      font-weight: 600;
+      margin-bottom: 0.7rem;
+      color: #22223b;
+    }
+
+    #rideStatusChart {
+      max-width: 220px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    .fc .fc-toolbar-title {
+      font-size: 1.1rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      color: #22223b;
+    }
+
+    .fc .fc-button {
+      background: #6366f1;
+      border: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      border-radius: 0.5rem;
+      padding: 0.3rem 0.8rem;
+      margin: 0 0.1rem;
+    }
+
+    .fc .fc-button:hover {
+      background: #4338ca;
+    }
+
+    .table {
+      font-size: 0.97rem;
+    }
+
+    .status-badge.online {
+      background: #e0f7fa;
+      color: #10b981;
+      border-radius: 0.5rem;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-row {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .dashboard-col {
+        min-width: 0;
+      }
+
+      .stats-cards {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }

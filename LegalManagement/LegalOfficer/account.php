@@ -71,149 +71,9 @@
       transition: margin 0.3s;
     }
 
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 2rem;
-      gap: 1rem;
-    }
-
-    .topbar .breadcrumbs {
-      color: #6c757d;
-    }
-
-    .topbar .profile {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-    }
-
-    .topbar .profile .bi-envelope {
-      font-size: 1.5rem;
-      color: #4311a5;
-      position: relative;
-    }
-
-    .topbar .badge {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: #f43f5e;
-      color: #fff;
-      font-size: 0.7rem;
-      border-radius: 50%;
-      padding: 2px 6px;
-    }
-
-    .profile-img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #e0e7ff;
-    }
-
-    .dashboard-title {
-      font-family: 'QuickSand', 'Poppins';
-      font-size: 2rem;
-      font-weight: 700;
-    }
-
-    .stats-cards {
-      display: flex;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 2rem;
-    }
-
-    .stats-card {
-      flex: 1;
-      min-width: 170px;
-      padding: 1.5rem;
-      background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 2px 8px rgba(140, 140, 200, 0.07);
-      text-align: center;
-    }
-
-    .stats-card .icon {
-      font-size: 2rem;
-      background: #ede9fe;
-      color: #4311a5;
-      border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 0.8rem auto;
-    }
-
-    .stats-card .label {
-      color: #6c757d;
-      margin-bottom: 0.2rem;
-    }
-
-    .stats-card .value {
-      font-size: 1.6rem;
-      font-weight: 700;
-    }
-
-    .dashboard-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .dashboard-col {
-      flex: 1;
-      min-width: 260px;
-      background: #fff;
-      border-radius: 18px;
-      padding: 1.5rem;
-      box-shadow: 0 2px 8px rgba(140, 140, 200, 0.07);
-    }
-
-    .dashboard-col h5 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-    }
-
-    .table th {
-      color: #6c757d;
-    }
-
-    .status-badge {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    .status-badge.confirmed {
-      background: #d1fae5;
-      color: #22c55e;
-    }
-
-    .status-badge.pending {
-      background: #fef9c3;
-      color: #eab308;
-    }
-
-    .sidebar-toggle {
-      display: none;
-      background: none;
-      border: none;
-      color: #fff;
-      font-size: 2rem;
-      position: absolute;
-      top: 1rem;
-      left: 1rem;
-      z-index: 1050;
+    .content {
+      margin-left: 250px;
+      padding: 2rem;
     }
 
     @media (max-width: 900px) {
@@ -225,7 +85,8 @@
         left: 0;
       }
 
-      .main-content {
+      .main-content,
+      .content {
         margin-left: 0;
         padding: 1rem;
       }
@@ -233,94 +94,6 @@
       .sidebar-toggle {
         display: block;
       }
-    }
-
-    @media (max-width: 700px) {
-      .main-content {
-        padding: 0.7rem 0.2rem 0.7rem 0.2rem;
-      }
-
-      .dashboard-title {
-        font-size: 1.3rem;
-      }
-
-      .stats-card {
-        min-width: 120px;
-        padding: 1rem 0.7rem;
-        font-size: 0.95rem;
-      }
-
-      .dashboard-col {
-        padding: 1rem 0.7rem;
-        min-width: 0;
-      }
-
-      .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
-
-      .topbar .profile {
-        margin-top: 0.5rem;
-      }
-
-      .topbar .dashboard-title {
-        font-size: 1.3rem;
-      }
-
-      .table-responsive {
-        overflow-x: auto;
-      }
-    }
-
-    @media (max-width: 500px) {
-      .sidebar {
-        width: 100vw;
-        left: -100vw;
-        padding: 0.7rem 0.2rem;
-      }
-
-      .sidebar.show {
-        left: 0;
-      }
-
-      .main-content {
-        padding: 0.3rem 0.1rem;
-      }
-
-      .stats-cards,
-      .dashboard-row {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .dashboard-col {
-        min-width: 0;
-        padding: 0.7rem 0.3rem;
-      }
-
-      .table-responsive {
-        overflow-x: auto;
-      }
-
-      .btn,
-      .form-control,
-      .form-select {
-        width: 100% !important;
-        margin-bottom: 0.5rem;
-      }
-    }
-
-    .facility-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .facility-image {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
     }
   </style>
 </head>
@@ -330,14 +103,12 @@
     <i class="bi bi-list"></i>
   </button>
   <div class="sidebar" id="sidebarNav">
-    <div class="logo mb-5"> <img src="\Administrative\asset\image.png" alt="Logo" style="height: 60px;"></div>
+    <div class="logo mb-5"> <img src="/Administrative/asset/image.png" alt="Logo" style="height: 60px;"></div>
     <a href="index.php"><i class="bi bi-grid"></i> Dashboard</a>
-    <a href="facilities.php"><i class="bi bi-building"></i> Facilities</a>
-    <a href="bookings.php"><i class="bi bi-calendar-check"></i> Bookings</a>
+    <a href="case.php"><i class="bi bi-building"></i> Assigned Cases</a>
     <a href="reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
-    <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
     <hr>
-    <a href="#" class="active"><i class="bi bi-person"></i> Account</a>
+    <a href="#" class="actives"><i class="bi bi-person"></i> Account</a>
     <a href="setting.php"><i class="bi bi-gear"></i> Settings</a>
     <a href="help.php"><i class="bi bi-question-circle"></i> Help</a>
     <a href="#"><i class="bi bi-box-arrow-right"></i> Log Out</a>

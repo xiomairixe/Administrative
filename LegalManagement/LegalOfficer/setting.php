@@ -330,11 +330,10 @@
   </button>
   <div class="sidebar" id="sidebarNav">
     <div class="logo mb-5"> <img src="\Administrative\asset\image.png" alt="Logo" style="height: 60px;"></div>
+  
     <a href="index.php"><i class="bi bi-grid"></i> Dashboard</a>
-    <a href="facilities.php"><i class="bi bi-building"></i> Facilities</a>
-    <a href="bookings.php"><i class="bi bi-calendar-check"></i> Bookings</a>
+    <a href="case.php"><i class="bi bi-building"></i> Assigned Cases</a>
     <a href="reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
-    <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
     <hr>
     <a href="account.php"><i class="bi bi-person"></i> Account</a>
     <a href="#" class="active"><i class="bi bi-gear"></i> Settings</a>

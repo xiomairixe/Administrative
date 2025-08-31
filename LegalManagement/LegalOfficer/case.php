@@ -1,57 +1,97 @@
 <?php
-  include ('../connection.php');
+// filepath: c:\xampp\htdocs\Administrative\LegalManagement\LegalOfficer\case.php
+include_once("../../connection.php");
 
-  // Get all cases from DB
-  $case_sql = "SELECT c.*, u.username AS assigned_name 
-               FROM cases c 
-               LEFT JOIN users u ON c.assigned_to = u.user_id
-               ORDER BY c.start_date DESC";
-  $case_result = $conn->query($case_sql);
+// Handle file upload for case documents
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_document']) && isset($_FILES['file'])) {
+    $case_id = intval($_POST['case_id']);
+    $title = $conn->real_escape_string($_POST['title']);
+    $type = $conn->real_escape_string($_POST['type']);
+    $version = $conn->real_escape_string($_POST['version']);
+    $status = $conn->real_escape_string($_POST['status']);
 
-  // Prepare cases array for frontend JS
-  $cases = [];
-  while ($case = $case_result->fetch_assoc()) {
-      // Get documents for this case
-      $doc_sql = "SELECT * FROM case_documents WHERE case_id = ?";
-      $doc_stmt = $conn->prepare($doc_sql);
-      $doc_stmt->bind_param("i", $case['case_id']);
-      $doc_stmt->execute();
-      $doc_result = $doc_stmt->get_result();
-      $documents = [];
-      while ($doc = $doc_result->fetch_assoc()) {
-          $documents[] = [
-              'title' => $doc['title'],
-              'type' => $doc['type'],
-              'version' => $doc['version'],
-              'status' => $doc['status'],
-              'file_path' => $doc['file_path']
-          ];
-      }
-      $doc_stmt->close();
+    // File upload handling
+    $upload_dir = __DIR__ . "/../../Admin/documentManagement/action/uploads/" . $case_id . "/";
+    if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
-      // Get notes for this case (from case_notes table)
-      $note_sql = "SELECT n.note, u.username FROM case_notes n LEFT JOIN users u ON n.user_id = u.user_id WHERE n.case_id = ?";
-      $note_stmt = $conn->prepare($note_sql);
-      $note_stmt->bind_param("i", $case['case_id']);
-      $note_stmt->execute();
-      $note_result = $note_stmt->get_result();
-      $notes = [];
-      while ($note = $note_result->fetch_assoc()) {
-          $notes[] = $note['username'] . ': ' . $note['note'];
-      }
-      $note_stmt->close();
+    $file_name = basename($_FILES['file']['name']);
+    $file_path = $upload_dir . $file_name;
+    $db_file_path = "uploads/" . $case_id . "/" . $file_name;
 
-      $cases[] = [
-          'id' => (int)$case['case_id'],
-          'name' => $case['name'],
-          'client' => $case['client'],
-          'status' => $case['status'],
-          'documents' => $documents,
-          'assignedTo' => $case['assigned_name'] ?? '',
-          'startDate' => $case['start_date'],
-          'notes' => $notes
-      ];
-  }
+    if (move_uploaded_file($_FILES['file']['tmp_name'], $file_path)) {
+        // Insert into document table
+        $uploaded_by = 1; // Replace with session user_id in real app
+        $description = $title;
+        $conn->query("INSERT INTO document (file_name, file_path, uploaded_by, docu_type, status, description) 
+            VALUES ('$file_name', '$db_file_path', $uploaded_by, '$type', '$status', '$description')");
+        $document_id = $conn->insert_id;
+
+        // Insert into case_documents
+        $conn->query("INSERT INTO case_documents (case_id, title, type, version, status, file_path) 
+            VALUES ($case_id, '$title', '$type', '$version', '$status', '$db_file_path')");
+        $case_doc_id = $conn->insert_id;
+
+        $doc = $conn->query("SELECT * FROM case_documents WHERE id=$case_doc_id")->fetch_assoc();
+        header('Content-Type: application/json');
+        echo json_encode(['success'=>true, 'document'=>$doc]);
+    } else {
+        header('Content-Type: application/json');
+        echo json_encode(['success'=>false, 'error'=>'File upload failed.']);
+    }
+    exit;
+}
+
+// Fetch all cases with assigned user info
+$cases_res = $conn->query("
+    SELECT c.*, u.fullname AS assigned_to_name
+    FROM cases c
+    LEFT JOIN users u ON c.assigned_to = u.user_id
+    ORDER BY c.created_at DESC
+");
+$cases = [];
+while ($c = $cases_res->fetch_assoc()) {
+    $case_id = $c['case_id'];
+    // Fetch documents for this case
+    $docs = [];
+    $doc_res = $conn->query("SELECT * FROM case_documents WHERE case_id = $case_id");
+    while ($d = $doc_res->fetch_assoc()) $docs[] = $d;
+    // Fetch notes for this case
+    $notes = [];
+    $note_res = $conn->query("SELECT cn.*, u.fullname FROM case_notes cn LEFT JOIN users u ON cn.user_id = u.user_id WHERE cn.case_id = $case_id ORDER BY cn.created_at DESC");
+    while ($n = $note_res->fetch_assoc()) $notes[] = $n;
+    $c['documents'] = $docs;
+    $c['notes'] = $notes;
+    $cases[] = $c;
+}
+
+// Fetch all legal officers for assignment
+$officers = [];
+$officer_res = $conn->query("SELECT user_id, fullname FROM users WHERE role='Compliance Officer'");
+while ($o = $officer_res->fetch_assoc()) $officers[] = $o;
+
+// Handle add note AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_note'])) {
+    $case_id = intval($_POST['case_id']);
+    $user_id = 8; // Example: use session user_id in real app
+    $note = $conn->real_escape_string($_POST['note']);
+    $conn->query("INSERT INTO case_notes (case_id, user_id, note) VALUES ($case_id, $user_id, '$note')");
+    $note_id = $conn->insert_id;
+    $note_row = $conn->query("SELECT cn.*, u.fullname FROM case_notes cn LEFT JOIN users u ON cn.user_id = u.user_id WHERE cn.id = $note_id")->fetch_assoc();
+    header('Content-Type: application/json');
+    echo json_encode(['success'=>true, 'note'=>$note_row]);
+    exit;
+}
+
+// Handle assign officer AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_officer'])) {
+    $case_id = intval($_POST['case_id']);
+    $assigned_to = intval($_POST['assigned_to']);
+    $conn->query("UPDATE cases SET assigned_to=$assigned_to WHERE case_id=$case_id");
+    $officer = $conn->query("SELECT fullname FROM users WHERE user_id=$assigned_to")->fetch_assoc();
+    header('Content-Type: application/json');
+    echo json_encode(['success'=>true, 'assigned_to'=>$officer['fullname']]);
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,14 +99,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Legal Document Management - Cases</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <title>ViaHale Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       background: #fafbfc;
+      font-family: 'QuickSand', 'Poppins';
       color: #22223b;
-      font-family: 'QuickSand', 'Poppins', Arial, sans-serif;
     }
 
     .sidebar {
@@ -85,9 +126,13 @@
     }
 
     .sidebar .logo {
+      font-family: 'QuickSand', 'Poppins';
       font-size: 1.6rem;
       color: #fff;
       margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .sidebar a {
@@ -113,141 +158,17 @@
       margin: 1.2rem 0;
     }
 
+    .main-content {
+      margin-left: 250px;
+      padding: 2.5rem;
+      min-height: 100vh;
+      background: #fafbfc;
+      transition: margin 0.3s;
+    }
+
     .content {
       margin-left: 250px;
       padding: 2rem;
-    }
-
-    .case-list {
-      background: #fff;
-      border-radius: 14px;
-      padding: 1.5rem 1rem;
-      min-height: 600px;
-    }
-
-    .case-list .active-case {
-      background: #ede9fe;
-      border-radius: 8px;
-    }
-
-    .case-list .case-item {
-      cursor: pointer;
-      border-radius: 8px;
-      padding: 0.7rem 1rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .case-list .case-item:hover {
-      background: #f3f4f6;
-    }
-
-    .case-list .case-status {
-      font-size: 0.95em;
-    }
-
-    .case-list .case-docs {
-      font-size: 0.95em;
-      color: #6c757d;
-    }
-
-    .case-details {
-      background: #fff;
-      border-radius: 14px;
-      padding: 1.5rem 1.5rem 1rem 1.5rem;
-      min-height: 600px;
-    }
-
-    .case-details .info-card {
-      background: #f8f9fb;
-      border-radius: 10px;
-      padding: 1rem 1.2rem;
-      margin-bottom: 1rem;
-    }
-
-    .case-doc-table th,
-    .case-doc-table td {
-      vertical-align: middle;
-    }
-
-    .case-doc-table th {
-      color: #6c757d;
-      font-weight: 600;
-    }
-
-    .case-doc-table td {
-      color: #22223b;
-    }
-
-    .case-doc-table .bi {
-      margin-right: 0.5rem;
-    }
-
-    .case-doc-table .table-actions a {
-      color: #6532c9;
-      font-weight: 500;
-      margin-right: 0.7rem;
-      text-decoration: none;
-    }
-
-    .case-doc-table .table-actions a:last-child {
-      margin-right: 0;
-    }
-
-    .case-notes {
-      background: #f8f9fb;
-      border-radius: 10px;
-      padding: 1rem 1.2rem;
-      min-height: 70px;
-    }
-
-    .btn-purple {
-      background: #6532c9;
-      color: #fff;
-    }
-
-    .btn-purple:hover {
-      background: #4311a5;
-      color: #fff;
-    }
-
-    .header-bar {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 1.2rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .header-bar .btn-primary {
-      font-weight: 500;
-    }
-
-    .header-bar .bi-bell {
-      font-size: 1.5rem;
-      color: #6532c9;
-      position: relative;
-    }
-
-    .header-bar .badge {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: #9a66ff;
-      color: #fff;
-      font-size: 0.7rem;
-      border-radius: 50%;
-      padding: 2px 6px;
-    }
-
-    .header-bar .profile-img {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .header-bar .profile-name {
-      font-weight: 600;
     }
 
     @media (max-width: 900px) {
@@ -259,82 +180,67 @@
         left: 0;
       }
 
+      .main-content,
       .content {
         margin-left: 0;
         padding: 1rem;
       }
 
-      .header-bar {
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 0.7rem;
+      .sidebar-toggle {
+        display: block;
       }
     }
   </style>
 </head>
 
 <body>
-  <button class="sidebar-toggle btn btn-outline-dark m-2" id="sidebarToggle" aria-label="Toggle sidebar">
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
     <i class="bi bi-list"></i>
   </button>
-
   <div class="sidebar" id="sidebarNav">
-    <div class="logo">Legal Officer</div>
+    <div class="logo mb-5"> <img src="/Administrative/asset/image.png" alt="Logo" style="height: 60px;"></div>
     <a href="index.php"><i class="bi bi-grid"></i> Dashboard</a>
-    <a href="case.php" class="active"><i class="bi bi-building"></i> Assigned Cases</a>
+    <a href="#" class="active"><i class="bi bi-building"></i> Assigned Cases</a>
     <a href="reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
-    <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
     <hr>
     <a href="account.php"><i class="bi bi-person"></i> Account</a>
     <a href="setting.php"><i class="bi bi-gear"></i> Settings</a>
     <a href="help.php"><i class="bi bi-question-circle"></i> Help</a>
-    <a href="logout.php"><i class="bi bi-box-arrow-right"></i> Log Out</a>
+    <a href="#"><i class="bi bi-box-arrow-right"></i> Log Out</a>
   </div>
 
   <div class="content">
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="fw-bold mb-0">Legal Document Management</h2>
-      <div class="header-bar">
-        <form class="d-flex align-items-center" role="search">
-          <input class="form-control me-2" type="search" placeholder="Search cases..." id="caseSearchInput"
-            style="max-width:220px;">
-        </form>
-        <button class="btn btn-outline-secondary d-flex align-items-center"><i class="bi bi-funnel me-2"></i>Filter
-        </button>
-        <button class="btn btn-primary d-flex align-items-center"><i class="bi bi-upload me-2"></i>Upload</button>
+      <h2 class="fw-bold">Legal Document Management</h2>
+      <div class="d-flex align-items-center gap-3">
         <span class="position-relative">
-          <i class="bi bi-bell"></i>
+          <i class="bi bi-bell fs-4"></i>
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span>
         </span>
         <div class="d-flex align-items-center gap-2">
-          <img src="https://ui-avatars.com/api/?name=John+Doe" alt="Profile" class="profile-img">
-          <span class="profile-name">Ramos Lance</span>
+          <img src="https://ui-avatars.com/api/?name=John+Doe" alt="Profile" class="rounded-circle" width="36" height="36">
+          <span class="fw-semibold">John Doe</span>
         </div>
       </div>
     </div>
+
     <div class="row g-4">
-      <!-- Left: Legal Cases List -->
-      <div class="col-lg-4">
-        <div class="case-list p-0">
-          <div class="d-flex align-items-center mb-3 px-3 pt-3">
-            <input type="text" class="form-control me-2" placeholder="Search cases..." id="caseListSearch">
-            <button class="btn btn-outline-secondary"><i class="bi bi-funnel"></i> Filter</button>
+        <!-- Case List -->
+        <div class="col-lg-4">
+          <div class="mb-3">
+            <input type="text" class="form-control" placeholder="Search cases..." id="caseListSearch">
           </div>
           <div id="caseList">
-            <!-- Cases will be rendered here -->
+            <!-- Rendered by JS -->
           </div>
           <div class="p-3">
-            <button class="btn btn-outline-primary w-100" onclick="alert('New case creation (demo)')"><i
-                class="bi bi-plus-circle"></i> New Case</button>
+            <button class="btn btn-outline-primary w-100" onclick="alert('New case creation (demo)')"><i class="bi bi-plus-circle"></i> New Case</button>
           </div>
         </div>
-      </div>
-      <!-- Right: Case Details -->
-      <div class="col-lg-8">
-        <div class="case-details">
-          <div id="caseDetailHeader">
-            <!-- Case details header will be rendered here -->
-          </div>
+        <!-- Case Details -->
+        <div class="col-lg-8">
+          <div id="caseDetailHeader"></div>
           <div class="row mb-3">
             <div class="col-md-4">
               <div class="info-card">
@@ -346,6 +252,9 @@
               <div class="info-card">
                 <div class="small text-muted mb-1"><i class="bi bi-person"></i> Assigned To</div>
                 <div id="caseAssignedTo" class="fw-semibold"></div>
+                <select id="assignOfficerSelect" class="form-select form-select-sm mt-2" style="display:none;"></select>
+                <button class="btn btn-sm btn-outline-secondary mt-2" id="assignOfficerBtn" style="display:none;">Assign</button>
+                <button class="btn btn-sm btn-link mt-2" id="showAssignOfficerBtn">Change</button>
               </div>
             </div>
             <div class="col-md-4">
@@ -355,7 +264,7 @@
               </div>
             </div>
           </div>
-          <h6 class="fw-bold mt-3 mb-2">Case Documents</h6>
+          <h6 class="fw-bold mt-3 mb-2">Case Documents <a href="#" class="small ms-2" onclick="showAddDocModal();return false;">Add Document</a></h6>
           <div class="table-responsive">
             <table class="table case-doc-table align-middle mb-3">
               <thead>
@@ -368,28 +277,63 @@
                 </tr>
               </thead>
               <tbody id="caseDocTable">
-                <!-- Documents will be rendered here -->
+                <!-- Rendered by JS -->
               </tbody>
             </table>
           </div>
-          <h6 class="fw-bold mt-4 mb-2">Case Notes <a href="#" class="small ms-2" onclick="addNote();return false;">Add
-              Note</a></h6>
+          <h6 class="fw-bold mt-4 mb-2">Case Notes <a href="#" class="small ms-2" onclick="addNote();return false;">Add Note</a></h6>
           <div class="case-notes mb-3" id="caseNotes">
             No case notes yet.
           </div>
-          <div class="d-flex gap-2 justify-content-end mt-4">
-            <button class="btn btn-outline-primary" onclick="alert('Upload Document (demo)')">Upload Document</button>
-            <button class="btn btn-outline-secondary" onclick="alert('Edit Case (demo)')">Edit Case</button>
-            <button class="btn btn-purple" onclick="alert('Create Document (demo)')">Create Document</button>
-          </div>
         </div>
       </div>
+<!-- Add Document Modal -->
+  <div class="modal fade" id="addDocModal" tabindex="-1" aria-labelledby="addDocModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="addDocForm" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addDocModalLabel">Add Case Document</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="case_id" id="addDocCaseId">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <input type="text" name="type" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Version</label>
+            <input type="text" name="version" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              <option>Draft</option>
+              <option>In Review</option>
+              <option>Pending Clarification</option>
+              <option>Completed</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">File</label>
+            <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx,.txt" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Add Document</button>
+        </div>
+      </form>
     </div>
   </div>
   <script>
-    // Load PHP cases array into JS
+    // PHP data to JS
     const cases = <?php echo json_encode($cases); ?>;
-    let selectedCaseId = cases.length > 0 ? cases[0].id : null;
+    const officers = <?php echo json_encode($officers); ?>;
+    let selectedCaseId = cases.length > 0 ? cases[0].case_id : null;
 
     function renderCaseList() {
       const list = document.getElementById('caseList');
@@ -401,9 +345,9 @@
           c.name.toLowerCase().includes(searchVal) ||
           c.client.toLowerCase().includes(searchVal)
         ) {
-          const activeClass = c.id === selectedCaseId ? 'active-case' : '';
+          const activeClass = parseInt(c.case_id) === parseInt(selectedCaseId) ? 'active-case' : '';
           list.innerHTML += `
-          <div class="case-item ${activeClass}" onclick="selectCase(${c.id})">
+          <div class="case-item ${activeClass}" onclick="selectCase(${c.case_id})">
             <div class="fw-semibold"><i class="bi bi-folder${activeClass ? '-fill' : ''} me-2"></i>${c.name}</div>
             <div class="small text-muted">Client: ${c.client}</div>
             <div class="case-status text-success small">${c.status}</div>
@@ -415,48 +359,82 @@
     }
 
     function renderCaseDetails() {
-      const c = cases.find(ca => ca.id === selectedCaseId);
+      const c = cases.find(ca => parseInt(ca.case_id) === parseInt(selectedCaseId));
       if (!c) return;
       document.getElementById('caseDetailHeader').innerHTML = `
         <h4 class="fw-bold mb-1">${c.name}</h4>
         <div class="mb-2 text-muted">Client: ${c.client}</div>
       `;
-      document.getElementById('caseStartDate').textContent = c.startDate;
-      document.getElementById('caseAssignedTo').textContent = c.assignedTo;
+      document.getElementById('caseStartDate').textContent = c.start_date;
+      document.getElementById('caseAssignedTo').textContent = c.assigned_to_name || 'Unassigned';
       document.getElementById('caseDocCount').textContent = `${c.documents.length} total`;
+
+      // Assign Officer UI
+      document.getElementById('showAssignOfficerBtn').onclick = function() {
+        document.getElementById('assignOfficerSelect').style.display = '';
+        document.getElementById('assignOfficerBtn').style.display = '';
+        this.style.display = 'none';
+        // Populate select
+        let sel = document.getElementById('assignOfficerSelect');
+        sel.innerHTML = officers.map(o => `<option value="${o.user_id}" ${c.assigned_to == o.user_id ? 'selected' : ''}>${o.fullname}</option>`).join('');
+      };
+      document.getElementById('assignOfficerBtn').onclick = function() {
+        let officerId = document.getElementById('assignOfficerSelect').value;
+        fetch('', {
+          method: 'POST',
+          headers: {'Content-Type':'application/x-www-form-urlencoded'},
+          body: `assign_officer=1&case_id=${c.case_id}&assigned_to=${officerId}`
+        }).then(r=>r.json()).then(data=>{
+          if(data.success) {
+            c.assigned_to = officerId;
+            c.assigned_to_name = officers.find(o=>o.user_id==officerId).fullname;
+            renderCaseDetails();
+          }
+        });
+      };
+      document.getElementById('assignOfficerSelect').style.display = 'none';
+      document.getElementById('assignOfficerBtn').style.display = 'none';
+      document.getElementById('showAssignOfficerBtn').style.display = '';
+
       // Documents
       let docRows = '';
       c.documents.forEach(doc => {
         let statusClass = '';
-        if (doc.status === 'In Review') statusClass = 'status-inreview';
-        else if (doc.status === 'Pending Clarification') statusClass = 'status-pending';
-        else if (doc.status === 'Completed') statusClass = 'status-completed';
-        else if (doc.status === 'Draft') statusClass = 'status-draft';
+        if (doc.status === 'In Review') statusClass = 'badge bg-warning text-dark';
+        else if (doc.status === 'Pending Clarification') statusClass = 'badge bg-danger';
+        else if (doc.status === 'Completed') statusClass = 'badge bg-success';
+        else if (doc.status === 'Draft') statusClass = 'badge bg-secondary';
         docRows += `
           <tr>
             <td><i class="bi bi-file-earmark-text"></i> ${doc.title}</td>
             <td>${doc.type}</td>
-            <td>${doc.version}</td>
-            <td class="${statusClass}">${doc.status}</td>
-            <td class="table-actions">
-              <a href="#" onclick="alert('View: ${doc.title}');return false;">View</a>
-              <a href="#" onclick="alert('Edit: ${doc.title}');return false;">Edit</a>
+            <td>${doc.version || ''}</td>
+            <td><span class="${statusClass}">${doc.status}</span></td>
+            <td>
+              <a href="../../Admin/documentManagement/${doc.file_path}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
             </td>
           </tr>
         `;
       });
       document.getElementById('caseDocTable').innerHTML = docRows;
+
       // Notes
       const notesDiv = document.getElementById('caseNotes');
       if (!c.notes || c.notes.length === 0) {
         notesDiv.innerHTML = 'No case notes yet.';
       } else {
-        notesDiv.innerHTML = c.notes.map(n => `<div class="mb-2">${n}</div>`).join('');
+        notesDiv.innerHTML = c.notes.map(n => `
+          <div class="mb-2">
+            <span class="note-user">${n.fullname}</span>
+            <span class="note-date">(${n.created_at})</span>
+            <div class="note-content">${n.note}</div>
+          </div>
+        `).join('');
       }
     }
 
     function selectCase(id) {
-      selectedCaseId = id;
+      selectedCaseId = parseInt(id);
       renderCaseList();
       renderCaseDetails();
     }
@@ -464,18 +442,16 @@
     function addNote() {
       const note = prompt('Enter your note for this case:');
       if (note && note.trim()) {
-        // AJAX to backend to save note
-        fetch('add_case_note.php', {
+        fetch('', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `case_id=${selectedCaseId}&note=${encodeURIComponent(note)}`
+          body: `add_note=1&case_id=${selectedCaseId}&note=${encodeURIComponent(note)}`
         })
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            // Add note to JS array and re-render
-            const c = cases.find(ca => ca.id === selectedCaseId);
-            c.notes.push(data.note_display);
+            const c = cases.find(ca => parseInt(ca.case_id) === parseInt(selectedCaseId));
+            c.notes.unshift(data.note);
             renderCaseDetails();
           } else {
             alert('Failed to add note.');
@@ -484,17 +460,44 @@
       }
     }
 
-    document.getElementById("sidebarToggle").addEventListener("click", function () {
-      document.getElementById("sidebarNav").classList.toggle("show");
-    });
+    function showAddDocModal() {
+      const c = cases.find(ca => parseInt(ca.case_id) === parseInt(selectedCaseId));
+      document.getElementById('addDocCaseId').value = c.case_id;
+      var modal = new bootstrap.Modal(document.getElementById('addDocModal'));
+      modal.show();
+    }
+
+    document.getElementById('addDocForm').onsubmit = function(e) {
+      e.preventDefault();
+      const form = e.target;
+      const fd = new FormData(form);
+      fd.append('add_document', 1);
+      fetch('', {
+        method: 'POST',
+        body: fd
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const c = cases.find(ca => parseInt(ca.case_id) === parseInt(selectedCaseId));
+          c.documents.push(data.document);
+          renderCaseDetails();
+          bootstrap.Modal.getInstance(document.getElementById('addDocModal')).hide();
+          form.reset();
+        } else {
+          alert(data.error || 'Failed to add document.');
+        }
+      });
+    };
+
     document.getElementById('caseListSearch').addEventListener('input', renderCaseList);
 
     window.onload = function () {
-      renderCaseList();
-      renderCaseDetails();
-    };
+  if (cases.length > 0) selectedCaseId = parseInt(cases[0].case_id);
+  renderCaseList();
+  renderCaseDetails();
+};
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>

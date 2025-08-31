@@ -1,3 +1,22 @@
+<?php
+// filepath: c:\xampp\htdocs\Administrative\LegalManagement\LegalOfficer\index.php
+include_once("../../connection.php");
+
+// --- Dashboard Stats ---
+$total_documents = $conn->query("SELECT COUNT(*) FROM document WHERE status != 'trash'")->fetch_row()[0];
+$pending_documents = $conn->query("SELECT COUNT(*) FROM document WHERE status = 'pending'")->fetch_row()[0];
+$active_cases = $conn->query("SELECT COUNT(*) FROM cases WHERE status = 'Active'")->fetch_row()[0];
+$pending_requests = $conn->query("SELECT COUNT(*) FROM legal_requests WHERE status IN ('Pending','In Review','Submitted','Draft')")->fetch_row()[0];
+
+// --- Recent Documents ---
+$recent_documents = $conn->query("SELECT file_name, status, uploaded_at, docu_type, description FROM document WHERE status != 'trash' ORDER BY uploaded_at DESC LIMIT 4");
+
+// --- Recent Cases ---
+$recent_cases = $conn->query("SELECT name, status, client, start_date FROM cases ORDER BY created_at DESC LIMIT 3");
+
+// --- Pending Requests ---
+$pending_legal_requests = $conn->query("SELECT title, status, priority, created_at FROM legal_requests WHERE status IN ('Pending','In Review','Submitted','Draft') ORDER BY created_at DESC LIMIT 3");
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -104,10 +123,9 @@
   </button>
   <div class="sidebar" id="sidebarNav">
     <div class="logo mb-5"> <img src="/Administrative/asset/image.png" alt="Logo" style="height: 60px;"></div>
-    <a href="index.php" class="active"><i class="bi bi-grid"></i> Dashboard</a>
+    <a href="#" class="active"><i class="bi bi-grid"></i> Dashboard</a>
     <a href="case.php"><i class="bi bi-building"></i> Assigned Cases</a>
     <a href="reports.php"><i class="bi bi-bar-chart"></i> Reports</a>
-    <a href="notifications.php"><i class="bi bi-bell"></i> Notifications</a>
     <hr>
     <a href="account.php"><i class="bi bi-person"></i> Account</a>
     <a href="setting.php"><i class="bi bi-gear"></i> Settings</a>
@@ -118,7 +136,7 @@
   <div class="content">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="fw-bold">Legal Document Management</h2>
+      <h2 class="fw-bold">Dashboard</h2>
       <div class="d-flex align-items-center gap-3">
         <button class="btn btn-primary px-4"><i class="bi bi-upload"></i> Upload</button>
         <span class="position-relative">
@@ -137,22 +155,22 @@
       <div class="col-md-4">
         <div class="card p-3 text-center">
           <div class="fs-4 fw-bold text-primary">Documents</div>
-          <div class="display-6 fw-bold text-primary">24</div>
-          <div class="small text-muted">5 need action</div>
+          <div class="display-6 fw-bold text-primary"><?= $total_documents ?></div>
+          <div class="small text-muted"><?= $pending_documents ?> need action</div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="card p-3 text-center">
           <div class="fs-4 fw-bold text-primary">Active Cases</div>
-          <div class="display-6 fw-bold text-primary">8</div>
-          <div class="small text-muted">2 high priority</div>
+          <div class="display-6 fw-bold text-primary"><?= $active_cases ?></div>
+          <div class="small text-muted">Active</div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="card p-3 text-center">
           <div class="fs-4 fw-bold text-primary">Pending Requests</div>
-          <div class="display-6 fw-bold text-primary">3</div>
-          <div class="small text-muted">1 overdue</div>
+          <div class="display-6 fw-bold text-primary"><?= $pending_requests ?></div>
+          <div class="small text-muted">Pending/Review</div>
         </div>
       </div>
     </div>
@@ -168,39 +186,69 @@
                 <th>Title</th>
                 <th>Status</th>
                 <th>Date</th>
-                <th>Priority</th>
-                <th>Action</th>
+                <th>Type</th>
+                <th>Description</th>
               </tr>
             </thead>
             <tbody>
+              <?php while($doc = $recent_documents->fetch_assoc()): ?>
+                <tr>
+                  <td class="fw-semibold"><?= htmlspecialchars($doc['file_name']) ?></td>
+                  <td>
+                    <?php
+                      $status = strtolower($doc['status']);
+                      if($status == 'active' || $status == 'approved')
+                        echo '<span class="text-success"><i class="bi bi-check-circle"></i> Approved</span>';
+                      elseif($status == 'pending')
+                        echo '<span class="text-warning"><i class="bi bi-clock"></i> Pending</span>';
+                      else
+                        echo '<span class="text-danger"><i class="bi bi-x-circle"></i> Rejected</span>';
+                    ?>
+                  </td>
+                  <td><?= htmlspecialchars(date('Y-m-d', strtotime($doc['uploaded_at']))) ?></td>
+                  <td><?= htmlspecialchars($doc['docu_type']) ?></td>
+                  <td><?= htmlspecialchars($doc['description']) ?></td>
+                </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Cases Table -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="fw-bold mb-3">Recent Cases</h5>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
               <tr>
-                <td class="fw-semibold">Employment Contract - ABC Corp</td>
-                <td><span class="text-primary"><i class="bi bi-arrow-repeat"></i> In Review</span></td>
-                <td>2023-05-15</td>
-                <td><span class="badge bg-danger bg-opacity-10 text-danger">High</span></td>
-                <td><a href="#" class="text-decoration-none text-primary">View</a></td>
+                <th>Case Name</th>
+                <th>Status</th>
+                <th>Client</th>
+                <th>Start Date</th>
               </tr>
-              <tr>
-                <td class="fw-semibold">NDA - XYZ Technologies</td>
-                <td><span class="text-warning"><i class="bi bi-exclamation-circle"></i> Pending Clarification</span></td>
-                <td>2023-05-14</td>
-                <td><span class="badge bg-warning bg-opacity-10 text-warning">Medium</span></td>
-                <td><a href="#" class="text-decoration-none text-primary">View</a></td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Lease Agreement - Office Space</td>
-                <td><span class="text-success"><i class="bi bi-check-circle"></i> Completed</span></td>
-                <td>2023-05-10</td>
-                <td><span class="badge bg-success bg-opacity-10 text-success">Low</span></td>
-                <td><a href="#" class="text-decoration-none text-primary">View</a></td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Patent Application - New Product</td>
-                <td><span class="text-secondary"><i class="bi bi-clock"></i> Draft</span></td>
-                <td>2023-05-08</td>
-                <td><span class="badge bg-danger bg-opacity-10 text-danger">High</span></td>
-                <td><a href="#" class="text-decoration-none text-primary">View</a></td>
-              </tr>
+            </thead>
+            <tbody>
+              <?php while($case = $recent_cases->fetch_assoc()): ?>
+                <tr>
+                  <td class="fw-semibold"><?= htmlspecialchars($case['name']) ?></td>
+                  <td>
+                    <?php
+                      $status = strtolower($case['status']);
+                      if($status == 'active')
+                        echo '<span class="badge bg-success">Active</span>';
+                      elseif($status == 'pending')
+                        echo '<span class="badge bg-warning text-dark">Pending</span>';
+                      else
+                        echo '<span class="badge bg-secondary">Closed</span>';
+                    ?>
+                  </td>
+                  <td><?= htmlspecialchars($case['client']) ?></td>
+                  <td><?= htmlspecialchars($case['start_date']) ?></td>
+                </tr>
+              <?php endwhile; ?>
             </tbody>
           </table>
         </div>
@@ -211,20 +259,28 @@
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="fw-bold mb-3">Pending Requests</h5>
+        <?php while($req = $pending_legal_requests->fetch_assoc()): ?>
         <div class="mb-3 p-3 border rounded bg-light">
-          <div class="fw-semibold mb-1">Clarification on Section 3.2</div>
+          <div class="fw-semibold mb-1"><?= htmlspecialchars($req['title']) ?></div>
           <div class="mb-1 text-muted small">
-            Document: NDA - XYZ Technologies<br>
-            From: Sarah Johnson
+            Status: <?= htmlspecialchars($req['status']) ?><br>
+            Priority: <span class="badge 
+              <?= $req['priority'] == 'High' ? 'bg-danger' : ($req['priority'] == 'Medium' ? 'bg-warning text-dark' : 'bg-success') ?>">
+              <?= htmlspecialchars($req['priority']) ?>
+            </span>
           </div>
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <button class="btn btn-primary btn-sm me-2">Respond</button>
-              <button class="btn btn-outline-secondary btn-sm">View Document</button>
+              <button class="btn btn-outline-secondary btn-sm">View Request</button>
             </div>
-            <div class="text-muted small">2023-05-14</div>
+            <div class="text-muted small"><?= htmlspecialchars(date('Y-m-d', strtotime($req['created_at']))) ?></div>
           </div>
         </div>
+        <?php endwhile; ?>
+        <?php if($pending_legal_requests->num_rows == 0): ?>
+          <div class="text-muted text-center">No pending requests.</div>
+        <?php endif; ?>
       </div>
     </div>
   </div>

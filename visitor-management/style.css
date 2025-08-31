@@ -664,4 +664,6 @@ body {
       object-fit: cover;
     }
 
-    
+        .table-avatar { border-radius: 50%; object-fit: cover; border: 2px solid #e0e7ff; }
+    .badge-yes { background: #22c55e; }
+    .badge-no { background: #f87171; }
